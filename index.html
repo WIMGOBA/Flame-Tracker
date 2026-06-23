@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOBA × Flame FT70 — Productie Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;font-size:14px}
+.hdr{background:#fff;border-bottom:1px solid #e5e5e5;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.logo{font-size:16px;font-weight:600;letter-spacing:-0.3px}.logo em{color:#D85A30;font-style:normal}
+.conn{font-size:11px;padding:3px 9px;border-radius:100px;background:#f0f0ee;color:#666}
+.conn.ok{background:#e8f5e2;color:#2d6e1a}.conn.err{background:#fce8e8;color:#a32d2d}
+.wb-progress{padding:12px 16px;display:flex;gap:12px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e5e5e5}
+.wb-card{flex:1;min-width:200px;background:#f8f8f6;border-radius:10px;padding:12px 16px;border:1px solid #e8e8e6}
+.wb-card-title{font-size:11px;color:#888;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.wb-card-title b{color:#1a1a1a;font-size:13px}
+.wb-bar{height:8px;background:#e5e5e5;border-radius:4px;margin-bottom:6px}
+.wb-fill{height:100%;border-radius:4px;transition:width 0.4s ease}
+.wbf-frame{background:#185FA5}.wbf-sheet{background:#2d7a1e}
+.wb-pct{font-size:26px;font-weight:600;letter-spacing:-1px}
+.wb-sub{font-size:11px;color:#888;margin-top:1px}
+.wb-tabs{display:flex;background:#fff;border-bottom:1px solid #e5e5e5}
+.wb-tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#888;background:none;border-top:none;border-left:none;border-right:none}
+.wb-tab.active{color:#1a1a1a;border-bottom-color:#D85A30}
+.controls{padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e5e5e5;align-items:center;position:sticky;top:57px;z-index:40}
+.controls input[type=text]{flex:1;min-width:140px;padding:7px 11px;font-size:13px;border:1px solid #ddd;border-radius:8px;background:#f8f8f6;color:#1a1a1a;outline:none}
+.controls input[type=text]:focus{border-color:#D85A30;background:#fff}
+.controls select{padding:7px 10px;font-size:12px;border:1px solid #ddd;border-radius:8px;background:#f8f8f6;color:#1a1a1a;outline:none}
+.fb{padding:4px 11px;font-size:11px;border:1px solid #ddd;border-radius:100px;background:#fff;color:#666;cursor:pointer;white-space:nowrap}
+.fb.active{background:#D85A30;border-color:#D85A30;color:#fff}
+.btn{padding:7px 13px;font-size:12px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#444;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#f5f5f3}
+.btn.accent{background:#D85A30;border-color:#D85A30;color:#fff}
+.btn.accent:hover{background:#b84a24}
+.beheer-bar{padding:8px 16px;background:#fef9f7;border-bottom:1px solid #f5ddd5;display:none;align-items:center;gap:10px;font-size:12px;color:#944}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+th{padding:8px 8px;text-align:left;font-size:10px;font-weight:600;color:#888;border-bottom:1px solid #e5e5e5;background:#fafaf8;white-space:nowrap;text-transform:uppercase;letter-spacing:0.3px}
+td{border-bottom:1px solid #f0f0ee;vertical-align:middle}
+.tc{padding:7px 8px;color:#1a1a1a}
+.tnr{padding:7px 8px;font-family:'SF Mono',Monaco,monospace;font-size:11px;color:#888}
+.badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600}
+.b-frame{background:#deeaf8;color:#185FA5}.b-sheet{background:#dff0d8;color:#2d7a1e}
+.b-cat{background:#f0f0ee;color:#666;font-weight:500}
+.sc{padding:3px 4px;text-align:center}
+.sb{width:32px;height:32px;border-radius:8px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;margin:0 auto;transition:all 0.1s;color:#999}
+.sb:hover:not(.na){background:#f5f5f3;border-color:#bbb}
+.sb.done{background:#2d7a1e;border-color:#2d7a1e;color:#fff}
+.sb.na{opacity:0.15;cursor:default;pointer-events:none;border-style:dashed}
+.pb{height:4px;background:#eee;border-radius:2px;margin-top:3px}
+.pf{height:100%;border-radius:2px;transition:width 0.3s}
+.qty{display:inline-block;background:#f0f0ee;color:#666;border-radius:100px;padding:1px 7px;font-size:11px;font-weight:500;text-align:center}
+.thumb{width:38px;height:38px;object-fit:cover;border-radius:8px;border:1px solid #e5e5e5;cursor:pointer}
+.no-img{width:38px;height:38px;border-radius:8px;border:1.5px dashed #ddd;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:18px}
+.no-img.clickable{cursor:pointer}.no-img.clickable:hover{border-color:#D85A30;color:#D85A30}
+.empty{padding:40px;text-align:center;color:#999;font-size:13px}
+.icon-btn{width:30px;height:30px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#666;font-size:14px}
+.icon-btn:hover{background:#f5f5f3}
+.icon-btn.red{border-color:#f5c5c5;color:#c0392b}.icon-btn.red:hover{background:#fce8e8}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;z-index:100}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.15);padding:22px;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.fr{margin-bottom:12px}
+.fr label{display:block;font-size:11px;font-weight:600;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px}
+.fr input:not([type=file]),.fr select{width:100%;padding:8px 11px;font-size:13px;border:1px solid #ddd;border-radius:8px;background:#fafaf8;color:#1a1a1a;outline:none}
+.fr input:focus,.fr select:focus{border-color:#D85A30;background:#fff}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.img-preview{width:100%;height:130px;object-fit:cover;border-radius:8px;border:1px solid #e5e5e5;margin-top:8px}
+.lightbox-img{max-width:92vw;max-height:85vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+.pin-box{display:flex;flex-direction:column;align-items:center;gap:14px;padding:10px 0}
+.pin-box input{width:130px;padding:12px;font-size:24px;text-align:center;letter-spacing:10px;border:1.5px solid #ddd;border-radius:10px;background:#fafaf8;color:#1a1a1a;outline:none}
+.pin-box input:focus{border-color:#D85A30}
+.pin-err{color:#c0392b;font-size:12px;display:none}
+.loading-msg{padding:40px;text-align:center;color:#999;font-size:13px}
+tr:hover td{background:#fafaf8}
+@media(max-width:600px){
+  .hdr{padding:10px 12px}
+  .wb-progress{padding:10px 12px;gap:8px}
+  .controls{padding:8px 12px;top:51px}
+  .tb-hide{display:none}
+  .sb{width:36px;height:36px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">GOBA <em>×</em> Flame FT70</div>
+  <span class="conn" id="conn-status">Verbinden...</span>
+  <div style="display:flex;gap:6px;margin-left:auto">
+    <button class="btn" id="beheer-btn" onclick="promptPin()">⚙ Beheer</button>
+  </div>
+</div>
+
+<div class="beheer-bar" id="beheer-bar">
+  ✏️ Beheermodus actief
+  <button class="btn accent" onclick="openModal('add')" style="margin-left:auto">+ Onderdeel</button>
+  <button class="btn" onclick="exitBeheer()">🔒 Vergrendelen</button>
+</div>
+
+<div class="wb-progress">
+  <div class="wb-card">
+    <div class="wb-card-title"><b>Frame</b> werkbon<span id="frame-count" style="font-size:10px;color:#888">–</span></div>
+    <div class="wb-bar"><div class="wb-fill wbf-frame" id="frame-fill" style="width:0%"></div></div>
+    <div class="wb-pct" id="frame-pct" style="color:#185FA5">0%</div>
+    <div class="wb-sub" id="frame-sub">Laden...</div>
+  </div>
+  <div class="wb-card">
+    <div class="wb-card-title"><b>Sheet</b> werkbon<span id="sheet-count" style="font-size:10px;color:#888">–</span></div>
+    <div class="wb-bar"><div class="wb-fill wbf-sheet" id="sheet-fill" style="width:0%"></div></div>
+    <div class="wb-pct" id="sheet-pct" style="color:#2d7a1e">0%</div>
+    <div class="wb-sub" id="sheet-sub">Laden...</div>
+  </div>
+</div>
+
+<div class="wb-tabs">
+  <button class="wb-tab active" onclick="setWb('alle',this)">Alle onderdelen</button>
+  <button class="wb-tab" onclick="setWb('frame',this)">Frame</button>
+  <button class="wb-tab" onclick="setWb('sheet',this)">Sheet</button>
+</div>
+
+<div class="controls">
+  <input type="text" id="search" placeholder="Zoek op nummer of omschrijving..." oninput="render()">
+  <select id="cat-filter" onchange="render()"><option value="">Alle categorieën</option></select>
+  <div style="display:flex;gap:4px;flex-wrap:wrap">
+    <button class="fb active" onclick="setSF('alle',this)">Alle</button>
+    <button class="fb" onclick="setSF('open',this)">Niet gestart</button>
+    <button class="fb" onclick="setSF('lopend',this)">In productie</button>
+    <button class="fb" onclick="setSF('klaar',this)">Gereed</button>
+    <button class="fb" onclick="setSF('uit',this)">Uitgeleverd</button>
+  </div>
+</div>
+
+<div class="tw">
+<table>
+<thead>
+<tr>
+  <th style="width:38px"></th>
+  <th style="width:118px">Partnummer</th>
+  <th>Omschrijving</th>
+  <th style="width:32px;text-align:center" class="tb-hide">Stk</th>
+  <th style="width:110px" class="tb-hide">Werkbon / Cat.</th>
+  <th style="width:46px;text-align:center">Ontbr.</th>
+  <th style="width:46px;text-align:center">Kant.</th>
+  <th style="width:46px;text-align:center">Lass.</th>
+  <th style="width:46px;text-align:center">Ger.</th>
+  <th style="width:46px;text-align:center">Uitg.</th>
+  <th style="width:52px">Voortg.</th>
+  <th id="action-col" style="width:64px;display:none"></th>
+</tr>
+</thead>
+<tbody id="tbody"><tr><td colspan="12" class="loading-msg">Verbinding maken met Supabase...</td></tr></tbody>
+</table>
+</div>
+
+<!-- Pin modal -->
+<div class="overlay" id="pin-modal">
+<div class="modal" style="width:290px">
+  <h3>🔒 Beheermodus</h3>
+  <div class="pin-box">
+    <input type="password" id="pin-input" maxlength="4" inputmode="numeric" placeholder="••••" onkeydown="if(event.key==='Enter')checkPin()">
+    <p class="pin-err" id="pin-err">Verkeerde pincode — probeer opnieuw</p>
+  </div>
+  <div class="modal-btns">
+    <button class="btn" onclick="closeOverlay('pin-modal')">Annuleren</button>
+    <button class="btn accent" onclick="checkPin()">Inloggen</button>
+  </div>
+</div>
+</div>
+
+<!-- Onderdeel modal -->
+<div class="overlay" id="item-modal">
+<div class="modal">
+  <h3 id="modal-title">Onderdeel toevoegen</h3>
+  <div class="fr"><label>Partnummer</label><input id="f-nr" placeholder="bijv. 1500922-500"></div>
+  <div class="fr"><label>Omschrijving</label><input id="f-desc" placeholder="bijv. Zijpaneel links"></div>
+  <div class="fr"><label>Aantal</label><input id="f-qty" type="number" min="1" value="1"></div>
+  <div class="fr"><label>Werkbon</label><select id="f-wb" onchange="updateCatOpts()"><option value="frame">Frame</option><option value="sheet">Sheet</option></select></div>
+  <div class="fr"><label>Categorie</label><select id="f-cat"></select></div>
+  <div class="fr"><label>Type</label><select id="f-type"><option value="buis">Buis</option><option value="plaat">Plaat</option><option value="asm">Samenstelling</option></select></div>
+  <div class="fr">
+    <label>Afbeelding</label>
+    <input type="file" id="f-img" accept="image/*" onchange="previewImg()">
+    <img id="f-img-preview" class="img-preview" style="display:none" alt="Preview">
+    <div id="f-img-current" style="margin-top:5px;font-size:11px;color:#888"></div>
+  </div>
+  <div class="modal-btns">
+    <button class="btn" onclick="closeOverlay('item-modal')">Annuleren</button>
+    <button class="btn accent" id="save-btn" onclick="saveItem()">Opslaan</button>
+  </div>
+</div>
+</div>
+
+<!-- Lightbox -->
+<div class="overlay" id="lightbox" onclick="closeOverlay('lightbox')" style="cursor:zoom-out">
+  <img class="lightbox-img" id="lightbox-img" src="" alt="Onderdeel foto">
+</div>
+
+<script>
+const SB='https://vjljyvdvyagaaoxohygx.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGp5dmR2eWFnYWFveG9oeWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDA1MTEsImV4cCI6MjA5Nzc3NjUxMX0.EtUojMEGmc0QKRKeyQARshoniMez9a20RoZ2NmcPSVE';
+const PIN='2315';
+const STEPS=['ont','kant','las','klaar','uit'];
+const FRAME_CATS=['Main structure','Technical room','Seats','Galley','Back wall','Lavatory','Divider wall','Checkerplate floor','Rolled strips','Aluminium plates'];
+const SHEET_CATS=['Upper panels','Seats','Technical room','Drain','Back wall','Loose parts','Galley','Luggage bin','Lavatory','Divider wall','Simulated laptop','Mounting trims'];
+
+const SEED=[
+["1300053-142","Buis 40 x 40 x 1.5",4,"buis","frame","Main structure"],["1500182-005","Buis 40 x 40 x 2",4,"buis","frame","Main structure"],["1500182-007","Montageplaat stoelen vloer",4,"plaat","frame","Seats"],["1500182-008","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-009","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-012","Kopplaat voor 60 x 40",12,"plaat","frame","Main structure"],["1500182-013","Buis 40 x 40 x 2",4,"buis","frame","Main structure"],["1500182-020","Lip 85 hoog",57,"plaat","frame","Main structure"],["1500182-022","Kopplaat voor 50 x 50",6,"plaat","frame","Main structure"],["1500182-023","Buis 50 x 50 x 2",1,"buis","frame","Main structure"],["1500182-024","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-025","Buis 40 x 40 x 2",4,"buis","frame","Main structure"],["1500182-031","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-032","2x lip overstaand",26,"plaat","frame","Main structure"],["1500182-040","Lip onderkant stoelen",2,"plaat","frame","Seats"],["1500182-141","Hoek lip",58,"plaat","frame","Main structure"],["1500182-142","Plaatdeel",2,"plaat","frame","Main structure"],["1500182-143","2x Lip 90grad",12,"plaat","frame","Main structure"],["1500182-144","Plaatdeel",1,"plaat","frame","Main structure"],["1500182-169","Rond lip",36,"plaat","frame","Main structure"],["1500182-177","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500182-198","Verbindingsplaat lengte 125",9,"plaat","frame","Main structure"],["1500182-305","Scharnier lip lavatory",2,"plaat","frame","Lavatory"],["1500182-330","Buis 40 x 2",1,"buis","frame","Main structure"],["1500182-331","Buis 40 x 2",1,"buis","frame","Main structure"],["1500182-332","Lasbocht",1,"buis","frame","Main structure"],["1500182-388","Buis 26.4 x 5",1,"buis","frame","Main structure"],["1500182-411","Draaibusje",3,"buis","frame","Main structure"],["1500182-412","Montageblokje deur lavatory",3,"plaat","frame","Lavatory"],
+["1500922-001","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-002","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-003","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-004","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-007","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-008","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-009","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-010","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-011","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-012","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-015","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-017","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-019","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-020","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-021","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-022","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-023","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-025","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-027","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-028","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-035","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-036","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-038","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-039","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-040","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-042","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-043","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-044","Buis 40 x 40 x 1.5",4,"buis","frame","Main structure"],["1500922-046","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-047","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-048","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-051","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-052","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-053","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-054","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-055","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-059","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-060","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-063","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-065","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-066","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-067","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-072","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-073","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-074","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-076","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-077","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-078","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-079","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-081","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-084","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-085","Buis 40 x 40 x 2",1,"buis","frame","Main structure"],["1500922-087","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-106","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-109","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-110","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-111","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-112","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-113","Buis 40 x 40 x 1.5",4,"buis","frame","Main structure"],["1500922-114","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-121","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-122","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-132","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-133","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-134","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-135","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-136","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-137","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-138","Buis 40 x 40 x 1.5",8,"buis","frame","Seats"],["1500922-139","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-140","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-154","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-157","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-158","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-159","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-162","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-163","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-165","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-166","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-167","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-168","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-170","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-171","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-172","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-173","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-174","Buis 40 x 40 x 1.5",5,"buis","frame","Main structure"],["1500922-177","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-178","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-179","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-182","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-183","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-184","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-185","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-186","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-188","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-194","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-301","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-302","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-304","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-305","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-306","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-308","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-322","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-331","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-334","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-337","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-338","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-339","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-340","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-343","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-344","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-345","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-347","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-348","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-351","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-352","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-360","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-363","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-364","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-369","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-410","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-414","Buis 50 x 50 x 2",1,"buis","frame","Main structure"],["1500922-447","Buis 40 x 20 x 1.5",1,"buis","frame","Main structure"],["1500922-450","Buis 40 x 1",1,"buis","frame","Main structure"],
+["1500922-013","Gewalste Plaat Lavatory tech side",1,"plaat","frame","Lavatory"],["1500922-014","Schertsplaat",8,"plaat","frame","Checkerplate floor"],["1500922-029","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-041","45 lip volledig",17,"plaat","frame","Main structure"],["1500922-045","Gewalste plaat Cabin",2,"plaat","frame","Rolled strips"],["1500922-049","Gewalste plaat Divider Wall",1,"plaat","frame","Divider wall"],["1500922-061","Gewalste plaat Galley boven",1,"plaat","frame","Galley"],["1500922-070","Inlasplaat onderkant galley",1,"plaat","frame","Galley"],["1500922-071","Gewalste plaat Galley onder",1,"plaat","frame","Galley"],["1500922-075","Lip 45 Half",4,"plaat","frame","Main structure"],["1500922-083","Achterwand stoelen midden",1,"plaat","frame","Back wall"],["1500922-090","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-091","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-092","Traanplaat 5/6.6",2,"plaat","frame","Checkerplate floor"],["1500922-097","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-117","Zijpaneel Tech kast Links",1,"plaat","sheet","Technical room"],["1500922-118","Zijpaneel Tech kast Rechts",1,"plaat","sheet","Technical room"],["1500922-119","Deur Tech kast",1,"plaat","sheet","Technical room"],["1500922-123","Lip 75",2,"plaat","frame","Main structure"],["1500922-124","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-125","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-127","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-141","Binnenplaat branderstoel",1,"plaat","sheet","Seats"],["1500922-142","Binnenplaat Stoelen",3,"plaat","sheet","Seats"],["1500922-143","Buitenplaat Stoelen",3,"plaat","sheet","Seats"],["1500922-144","Buitenkant Branderstoel",1,"plaat","sheet","Seats"],["1500922-150","Verbindingsplaat lengte 200",2,"plaat","frame","Main structure"],["1500922-175","Lav paneel links onder",1,"plaat","sheet","Lavatory"],["1500922-176","Paneel Cabin Lavatory Onder",1,"plaat","sheet","Lavatory"],["1500922-180","Paneel Lav + cabin rechts boven",2,"plaat","sheet","Lavatory"],["1500922-181","Paneel Lav + Cabin Rechts Midden",2,"plaat","sheet","Lavatory"],["1500922-187","Achterwand Lavatory",1,"plaat","sheet","Lavatory"],["1500922-193","Lip 127 MM",8,"plaat","frame","Main structure"],["1500922-195","Achterwand stoelen Lav kant onder",1,"plaat","sheet","Back wall"],["1500922-196","Achterwand stoelen Galleykant",1,"plaat","sheet","Back wall"],["1500922-198","Plaatdeel",12,"plaat","sheet","Loose parts"],["1500922-303","Paneel Lav voorkant naast deur",1,"plaat","sheet","Lavatory"],["1500922-307","Plafond Lavatory",1,"plaat","sheet","Lavatory"],["1500922-309","Paneel Tussenwand Galley Onder",1,"plaat","sheet","Divider wall"],["1500922-310","Paneel tussenwand galley boven",1,"plaat","sheet","Divider wall"],["1500922-311","Blad Tafeltje Tussenwand",1,"plaat","sheet","Divider wall"],["1500922-312","Onderkant Tafeltje Tussenwand",1,"plaat","sheet","Divider wall"],["1500922-313","Paneel Tussenwand Cabin Onder",1,"plaat","sheet","Divider wall"],["1500922-314","Paneel tussenwand Cabin Boven",1,"plaat","sheet","Divider wall"],["1500922-325","Afwatering tafel divider wall",1,"plaat","sheet","Drain"],["1500922-327","Divider wall lip",2,"plaat","sheet","Divider wall"],["1500922-329","Achterplaat tafel Divider Wall",1,"plaat","sheet","Divider wall"],["1500922-330","Tussenplaat Tafel Divider Wall",1,"plaat","sheet","Divider wall"],["1500922-333","Bodem oven met gat voor brander",1,"plaat","sheet","Galley"],["1500922-336","Bodemplaat Oven",1,"plaat","sheet","Galley"],["1500922-342","Paneel Galley boven oven",1,"plaat","sheet","Galley"],["1500922-346","Onderpaneel Aanrecht Galley",2,"plaat","sheet","Galley"],["1500922-349","Paneel kruisframe links boven",1,"plaat","sheet","Upper panels"],["1500922-350","Paneel kruisframe rechts onder",1,"plaat","sheet","Upper panels"],["1500922-353","Onderpaneel voorkant Galley",1,"plaat","sheet","Galley"],["1500922-354","Bovenpaneel voorkant Galley",1,"plaat","sheet","Galley"],["1500922-356","Inlaspaneel Galley Midden",1,"plaat","sheet","Galley"],["1500922-357","Inlaspaneel Galley Boven",1,"plaat","sheet","Galley"],["1500922-358","Aanrechtblad Galley",1,"plaat","sheet","Galley"],["1500922-361","U profiel gasveren luiken",3,"plaat","sheet","Mounting trims"],["1500922-365","Zijkanten Waterpunt Galley",1,"plaat","sheet","Galley"],["1500922-366","Achterkant Waterpunt Galley",1,"plaat","sheet","Galley"],["1500922-367","Lekbak Tappunt Galley",1,"plaat","sheet","Drain"],["1500922-368","Lekrooster Tappunt Galley",1,"plaat","sheet","Drain"],["1500922-370","Dubbele achterwand oven",1,"plaat","sheet","Galley"],["1500922-371","Aflopende Lekplaat oven",1,"plaat","sheet","Drain"],["1500922-372","Lekbak Oven",1,"plaat","sheet","Drain"],["1500922-373","Achterwand + zijwanden oven",1,"plaat","sheet","Galley"],["1500922-374","Bovenkant oven",1,"plaat","sheet","Galley"],["1500922-375","Deur Oven buitenkant",1,"plaat","sheet","Galley"],["1500922-377","Achterkant Deur oven",1,"plaat","sheet","Galley"],["1500922-378","Ronde achterwand galley",1,"plaat","sheet","Galley"],["1500922-384","Strip tussenbalken overhead locker",6,"plaat","sheet","Luggage bin"],["1500922-390","Buitenkant deur overhead locker",3,"plaat","sheet","Luggage bin"],["1500922-392","Binnenkant deur overhead locker",2,"plaat","sheet","Luggage bin"],["1500922-394","Handgreep deur overhead locker",3,"plaat","sheet","Luggage bin"],["1500922-396","Paneel Lavatory Links Boven",1,"plaat","sheet","Lavatory"],["1500922-398","Paneel Lavatory Links Midden",1,"plaat","sheet","Lavatory"],["1500922-399","WC Deksel",1,"plaat","sheet","Lavatory"],["1500922-400","WC achterplaat",1,"plaat","sheet","Lavatory"],["1500922-401","WC Helft Links",1,"plaat","sheet","Lavatory"],["1500922-402","Achterwand cabin lav kant boven",1,"plaat","sheet","Back wall"],["1500922-404","Verbindingsplaat achterwand stoelen",1,"plaat","sheet","Back wall"],["1500922-405","Bovenpaneel Tech kast",1,"plaat","sheet","Technical room"],["1500922-406","Onderpaneel Tech kast",1,"plaat","sheet","Technical room"],["1500922-407","Beugel voor leidingen achterwand",1,"plaat","sheet","Mounting trims"],["1500922-412","Afdekplaat afzuiging oven",1,"plaat","sheet","Galley"],["1500922-415","Afdekplaat brander middenvak overhead locker",1,"plaat","sheet","Luggage bin"],["1500922-417","Montageplaat afzuiging overhead locker",3,"plaat","sheet","Luggage bin"],["1500922-418","Afdekplaat afzuiging overhead locker",1,"plaat","sheet","Luggage bin"],["1500922-419_L","Rand Deksel overhead locker Links",3,"plaat","sheet","Luggage bin"],["1500922-419_R","Rand deksel overhead locker Rechts",3,"plaat","sheet","Luggage bin"],["1500922-425","Afdekplaat vakken overhead locker",2,"plaat","sheet","Luggage bin"],["1500922-426","Bevestigingsstrip overhead locker",4,"plaat","sheet","Mounting trims"],["1500922-427","Vlotterbeugel Laptop",1,"plaat","sheet","Simulated laptop"],["1500922-430","Gootsteenblad Lavatory",1,"plaat","sheet","Lavatory"],["1500922-431","Bovenrand gootsteen Lavatory",1,"plaat","sheet","Lavatory"],["1500922-432","Voorpaneel Gootsteen Lavatory",1,"plaat","sheet","Lavatory"],["1500922-433","Achter en zijpanelen kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-434","Voorpaneel vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-435","Bovenkant Kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-436","Onderrand Kast Vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-437","Onderkant kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-438","Afwateringsplaat Vuilnisbak Boven",1,"plaat","sheet","Lavatory"],["1500922-439","Afwatering Vuilnisbak onder",1,"plaat","sheet","Lavatory"],["1500922-440","Montagepaneel achterkant kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-441","Kolom voorkant lavatory",1,"plaat","sheet","Lavatory"],["1500922-443","Zijpaneel afzuiging kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-444","Afwerkstrip Onderkant Kast Vuilnisbak",1,"plaat","sheet","Mounting trims"],["1500922-445","Montageplaat pomp zijkant kast Vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-446","Vuilnisschacht Zij en Achterkant",1,"plaat","sheet","Lavatory"],["1500922-448","Deurtje vuilnisbak lavatory",1,"plaat","sheet","Lavatory"],["1500922-449","Achterkant deurtje vuilnisbak Lavatory",1,"plaat","sheet","Lavatory"],["1500922-451","Kopplaat 40 x 20",2,"plaat","frame","Main structure"],["1500922-452","Deksel vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-453","Duw arm deksel vuilnisbak",2,"plaat","sheet","Lavatory"],["1500922-454","Vuilnisschacht Voorkant",1,"plaat","sheet","Lavatory"],
+["1500922-200","Frame Firetrainer Totaal",1,"asm","frame","Main structure"],["1500922-222","Kast tech ruimte",1,"asm","frame","Technical room"],["1500922-224","Frame zitting stoel",4,"asm","frame","Seats"],["1500922-247","Tafel laptop",1,"asm","sheet","Simulated laptop"],["1500922-260","Oven Galley",1,"asm","sheet","Galley"],["1500922-272","Watertappunt Galley",1,"asm","sheet","Galley"],["1500922-275","Deur Oven",1,"asm","sheet","Galley"],["1500922-281","Deur overhead locker Links",1,"asm","sheet","Luggage bin"],["1500922-290","Kastje vuilnisbak lavatory",1,"asm","sheet","Lavatory"],["1500922-292","Deur vuilnisbak Lavatory",1,"asm","sheet","Lavatory"],["1500922-293","Verdeler lavatory",1,"asm","sheet","Lavatory"],["1500922-295","WC",1,"asm","sheet","Lavatory"],["1500922-296","Gootsteenblad Lavatory",1,"asm","sheet","Lavatory"],["1500922-359","Electra paneel Tech Lav",1,"plaat","sheet","Technical room"],["1500922-388","Lassok",4,"buis","frame","Main structure"],
+];
+
+let data=[], wbFilter='alle', sfFilter='alle', beheerMode=false, editNr=null;
+
+function sbFetch(path,method='GET',body){
+  return fetch(SB+'/rest/v1/'+path,{
+    method,
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json',
+      'Prefer':method==='POST'?'return=representation,resolution=merge-duplicates':''},
+    body:body?JSON.stringify(body):undefined
+  }).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(JSON.stringify(j));return j;});
+}
+
+function allowedSteps(type){
+  if(type==='buis')return{ont:false,kant:false,las:true,klaar:true,uit:true};
+  if(type==='asm') return{ont:true,kant:true,las:true,klaar:true,uit:true};
+  return              {ont:true,kant:true,las:false,klaar:true,uit:true};
+}
+function getProgress(item){
+  const al=allowedSteps(item.type);
+  const list=STEPS.filter(s=>al[s]);
+  const done=list.filter(s=>item.steps&&item.steps[s]).length;
+  return{done,total:list.length,pct:list.length>0?Math.round((done/list.length)*100):0};
+}
+function getStatus(item){
+  if(item.steps?.uit)return'uit';
+  if(item.steps?.klaar)return'klaar';
+  if(getProgress(item).done>0)return'lopend';
+  return'open';
+}
+
+async function loadData(){
+  try{
+    const[onderdelen,voortgang]=await Promise.all([
+      sbFetch('flame_onderdelen?select=*&order=nr'),
+      sbFetch('flame_voortgang?select=*')
+    ]);
+    document.getElementById('conn-status').textContent='Verbonden ✓';
+    document.getElementById('conn-status').className='conn ok';
+    if(!onderdelen.length){
+      document.getElementById('tbody').innerHTML='<tr><td colspan="12" class="loading-msg">Eerste keer laden — onderdelen worden opgeslagen...</td></tr>';
+      await seedData();return loadData();
+    }
+    const vmap={};
+    voortgang.forEach(v=>{if(!vmap[v.onderdeel_nr])vmap[v.onderdeel_nr]={};vmap[v.onderdeel_nr][v.stap]=v.gedaan;});
+    data=onderdelen.map(o=>({nr:o.nr,desc:o.omschrijving,qty:o.aantal,type:o.type,wb:o.werkbon,cat:o.categorie,img:o.afbeelding_url,
+      steps:Object.assign({ont:false,kant:false,las:false,klaar:false,uit:false},vmap[o.nr]||{})}));
+    populateCatFilter();updateStats();render();
+  }catch(e){
+    document.getElementById('conn-status').textContent='Verbindingsfout';
+    document.getElementById('conn-status').className='conn err';
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="12" class="loading-msg" style="color:#c0392b">Verbindingsfout: ${e.message}</td></tr>`;
+  }
+}
+
+async function seedData(){
+  for(let i=0;i<SEED.length;i+=50){
+    const batch=SEED.slice(i,i+50).map(r=>({nr:r[0],omschrijving:r[1],aantal:r[2],type:r[3],werkbon:r[4],categorie:r[5]}));
+    await sbFetch('flame_onderdelen','POST',batch);
+  }
+}
+
+async function toggle(nr,step){
+  const item=data.find(d=>d.nr===nr);
+  if(!item||!allowedSteps(item.type)[step])return;
+  item.steps[step]=!item.steps[step];
+  updateStats();render();
+  fetch(SB+'/rest/v1/flame_voortgang',{method:'POST',
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify({onderdeel_nr:nr,stap:step,gedaan:item.steps[step],bijgewerkt_op:new Date().toISOString()})
+  });
+}
+
+async function removeItem(nr){
+  if(!confirm('Verwijder onderdeel '+nr+'?'))return;
+  data=data.filter(d=>d.nr!==nr);
+  updateStats();populateCatFilter();render();
+  fetch(SB+'/rest/v1/flame_onderdelen?nr=eq.'+encodeURIComponent(nr),{method:'DELETE',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
+}
+
+function promptPin(){
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-err').style.display='none';
+  document.getElementById('pin-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('pin-input').focus(),100);
+}
+function checkPin(){
+  if(document.getElementById('pin-input').value===PIN){
+    closeOverlay('pin-modal');beheerMode=true;
+    document.getElementById('beheer-bar').style.display='flex';
+    document.getElementById('beheer-btn').textContent='🔓 Beheer';
+    document.getElementById('action-col').style.display='';render();
+  }else{
+    document.getElementById('pin-err').style.display='block';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+}
+function exitBeheer(){
+  beheerMode=false;
+  document.getElementById('beheer-bar').style.display='none';
+  document.getElementById('beheer-btn').textContent='⚙ Beheer';
+  document.getElementById('action-col').style.display='none';render();
+}
+function closeOverlay(id){document.getElementById(id).classList.remove('open');}
+
+function openModal(mode,nr){
+  editNr=nr||null;
+  document.getElementById('modal-title').textContent=mode==='add'?'Onderdeel toevoegen':'Onderdeel bewerken';
+  document.getElementById('f-nr').disabled=mode==='edit';
+  document.getElementById('f-img-preview').style.display='none';
+  document.getElementById('f-img-current').textContent='';
+  document.getElementById('f-img').value='';
+  if(mode==='edit'&&nr){
+    const it=data.find(d=>d.nr===nr);
+    document.getElementById('f-nr').value=it.nr;
+    document.getElementById('f-desc').value=it.desc;
+    document.getElementById('f-qty').value=it.qty;
+    document.getElementById('f-wb').value=it.wb;
+    document.getElementById('f-type').value=it.type;
+    updateCatOpts();document.getElementById('f-cat').value=it.cat;
+    if(it.img)document.getElementById('f-img-current').textContent='✓ Afbeelding aanwezig';
+  }else{
+    document.getElementById('f-nr').value='';document.getElementById('f-desc').value='';
+    document.getElementById('f-qty').value=1;document.getElementById('f-wb').value='frame';
+    document.getElementById('f-type').value='buis';updateCatOpts();
+  }
+  document.getElementById('item-modal').classList.add('open');
+}
+function updateCatOpts(){
+  const wb=document.getElementById('f-wb').value;
+  document.getElementById('f-cat').innerHTML=(wb==='frame'?FRAME_CATS:SHEET_CATS).map(c=>`<option>${c}</option>`).join('');
+}
+function previewImg(){
+  const file=document.getElementById('f-img').files[0];if(!file)return;
+  const r=new FileReader();r.onload=e=>{const i=document.getElementById('f-img-preview');i.src=e.target.result;i.style.display='block';};r.readAsDataURL(file);
+}
+async function saveItem(){
+  const btn=document.getElementById('save-btn');btn.textContent='Bezig...';btn.disabled=true;
+  const nr=document.getElementById('f-nr').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  const qty=parseInt(document.getElementById('f-qty').value)||1;
+  const wb=document.getElementById('f-wb').value;
+  const cat=document.getElementById('f-cat').value;
+  const type=document.getElementById('f-type').value;
+  if(!nr||!desc){alert('Vul partnummer en omschrijving in.');btn.textContent='Opslaan';btn.disabled=false;return;}
+  let imgUrl=editNr?data.find(d=>d.nr===editNr)?.img||null:null;
+  const file=document.getElementById('f-img').files[0];
+  if(file){
+    const ext=file.name.split('.').pop();
+    const path=nr.replace(/[^a-z0-9]/gi,'_')+'.'+ext;
+    const up=await fetch(`${SB}/storage/v1/object/flame-afbeeldingen/${path}`,{method:'POST',
+      headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':file.type,'x-upsert':'true'},body:file});
+    if(up.ok)imgUrl=`${SB}/storage/v1/object/public/flame-afbeeldingen/${path}`;
+  }
+  const row={nr,omschrijving:desc,aantal:qty,type,werkbon:wb,categorie:cat,afbeelding_url:imgUrl};
+  try{
+    if(editNr){
+      await fetch(`${SB}/rest/v1/flame_onderdelen?nr=eq.${encodeURIComponent(editNr)}`,{method:'PATCH',
+        headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(row)});
+      const it=data.find(d=>d.nr===editNr);if(it)Object.assign(it,{desc,qty,type,wb,cat,img:imgUrl});
+    }else{
+      if(data.find(d=>d.nr===nr)){alert('Partnummer bestaat al.');btn.textContent='Opslaan';btn.disabled=false;return;}
+      await sbFetch('flame_onderdelen','POST',row);
+      data.push({nr,desc,qty,type,wb,cat,img:imgUrl,steps:{ont:false,kant:false,las:false,klaar:false,uit:false}});
+    }
+    closeOverlay('item-modal');updateStats();populateCatFilter();render();
+  }catch(e){alert('Opslaan mislukt: '+e.message);}
+  btn.textContent='Opslaan';btn.disabled=false;
+}
+
+function openLightbox(url){document.getElementById('lightbox-img').src=url;document.getElementById('lightbox').classList.add('open');}
+function setWb(f,el){wbFilter=f;document.querySelectorAll('.wb-tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');populateCatFilter();render();}
+function setSF(f,el){sfFilter=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));el.classList.add('active');render();}
+
+function updateStats(){
+  let fs=0,ft=0,ss=0,st=0;
+  data.forEach(d=>{const p=getProgress(d);if(d.wb==='frame'){fs+=p.done;ft+=p.total;}else{ss+=p.done;st+=p.total;}});
+  const fp=ft>0?Math.round((fs/ft)*100):0,sp=st>0?Math.round((ss/st)*100):0;
+  document.getElementById('frame-fill').style.width=fp+'%';
+  document.getElementById('frame-pct').textContent=fp+'%';
+  document.getElementById('frame-count').textContent=fs+'/'+ft+' stappen';
+  document.getElementById('frame-sub').textContent=data.filter(d=>d.wb==='frame').length+' onderdelen';
+  document.getElementById('sheet-fill').style.width=sp+'%';
+  document.getElementById('sheet-pct').textContent=sp+'%';
+  document.getElementById('sheet-count').textContent=ss+'/'+st+' stappen';
+  document.getElementById('sheet-sub').textContent=data.filter(d=>d.wb==='sheet').length+' onderdelen';
+}
+function populateCatFilter(){
+  const sel=document.getElementById('cat-filter');const cur=sel.value;
+  const cats=[...new Set(data.filter(d=>wbFilter==='alle'||d.wb===wbFilter).map(d=>d.cat))].sort();
+  sel.innerHTML='<option value="">Alle categorieën</option>'+cats.map(c=>`<option${c===cur?' selected':''}>${c}</option>`).join('');
+}
+function render(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const cf=document.getElementById('cat-filter').value;
+  const filtered=data.filter(item=>{
+    if(wbFilter!=='alle'&&item.wb!==wbFilter)return false;
+    if(cf&&item.cat!==cf)return false;
+    if(q&&!item.nr.toLowerCase().includes(q)&&!item.desc.toLowerCase().includes(q))return false;
+    if(sfFilter!=='alle'&&getStatus(item)!==sfFilter)return false;
+    return true;
+  });
+  const tbody=document.getElementById('tbody');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="12" class="empty">Geen onderdelen gevonden</td></tr>';return;}
+  const pfC=i=>i.wb==='frame'?'#185FA5':'#2d7a1e';
+  tbody.innerHTML=filtered.map(item=>{
+    const{pct}=getProgress(item);
+    const al=allowedSteps(item.type);
+    const scs=STEPS.map(s=>{const ok=al[s];const done=item.steps?.[s];
+      return`<td class="sc"><button class="sb${done?' done':ok?'':' na'}" onclick="toggle('${item.nr}','${s}')">${done?'✓':ok?'·':'–'}</button></td>`;
+    }).join('');
+    const imgCell=item.img
+      ?`<td class="tc"><img src="${item.img}" class="thumb" onclick="openLightbox('${item.img}')" alt="foto"></td>`
+      :`<td class="tc"><div class="no-img${beheerMode?' clickable':''}"${beheerMode?` onclick="openModal('edit','${item.nr}')" title="Klik om afbeelding toe te voegen"`:''}>${beheerMode?'+':'·'}</div></td>`;
+    const acts=beheerMode?`<td class="tc" style="white-space:nowrap">
+      <button class="icon-btn" onclick="openModal('edit','${item.nr}')" title="Bewerken">✏️</button>
+      <button class="icon-btn red" onclick="removeItem('${item.nr}')" title="Verwijderen">🗑</button>
+    </td>`:'';
+    return`<tr>
+      ${imgCell}
+      <td class="tnr">${item.nr}</td>
+      <td class="tc">${item.desc}</td>
+      <td class="tc tb-hide" style="text-align:center"><span class="qty">${item.qty}</span></td>
+      <td class="tc tb-hide"><span class="badge ${item.wb==='frame'?'b-frame':'b-sheet'}">${item.wb==='frame'?'Frame':'Sheet'}</span> <span class="badge b-cat">${item.cat}</span></td>
+      ${scs}
+      <td class="tc"><div style="font-size:10px;color:#888">${pct}%</div><div class="pb"><div class="pf" style="width:${pct}%;background:${pfC(item)}"></div></div></td>
+      ${acts}
+    </tr>`;
+  }).join('');
+}
+
+loadData();
+</script>
+</body>
+</html>
