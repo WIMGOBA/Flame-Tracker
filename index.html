@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOBA × Flame Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;font-size:14px;min-height:100vh}
+.hdr{background:#fff;border-bottom:1px solid #e5e5e5;padding:11px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.logo{font-size:15px;font-weight:700;letter-spacing:-0.3px}.logo em{color:#D85A30;font-style:normal}
+.conn{font-size:11px;padding:2px 8px;border-radius:100px;background:#f0f0ee;color:#666}
+.conn.ok{background:#e8f5e2;color:#2d6e1a}.conn.err{background:#fce8e8;color:#a32d2d}
+.btn{padding:6px 12px;font-size:12px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+.btn:hover{background:#f5f5f3}
+.btn.accent{background:#D85A30;border-color:#D85A30;color:#fff}
+.btn.accent:hover{background:#b84a24}
+.btn.blue{background:#185FA5;border-color:#185FA5;color:#fff}
+
+/* Order tabs */
+.order-bar{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 16px;display:flex;align-items:center;gap:0;overflow-x:auto;min-height:44px}
+.order-tab{padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#888;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.order-tab.active{color:#1a1a1a;border-bottom-color:#D85A30}
+.order-tab .pct-pill{font-size:10px;padding:1px 6px;border-radius:100px;background:#f0f0ee;color:#666}
+.order-tab.active .pct-pill{background:#fde8e0;color:#D85A30}
+.add-order-btn{padding:8px 12px;font-size:12px;color:#888;cursor:pointer;border:none;background:none;white-space:nowrap;border-bottom:2px solid transparent}
+.add-order-btn:hover{color:#D85A30}
+.no-orders{padding:60px 20px;text-align:center;color:#999}
+.no-orders h2{font-size:18px;font-weight:600;margin-bottom:8px;color:#444}
+.no-orders p{font-size:13px;margin-bottom:20px}
+
+/* Progress cards */
+.wb-progress{padding:10px 16px;display:flex;gap:10px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e5e5e5}
+.wb-card{flex:1;min-width:160px;background:#f8f8f6;border-radius:10px;padding:10px 14px;border:1px solid #e8e8e6}
+.wb-label{font-size:11px;color:#888;margin-bottom:6px;display:flex;justify-content:space-between}
+.wb-label b{color:#1a1a1a;font-size:12px}
+.wb-bar{height:7px;background:#e5e5e5;border-radius:4px;margin-bottom:5px}
+.wb-fill{height:100%;border-radius:4px;transition:width 0.4s}
+.wbf-frame{background:#185FA5}.wbf-sheet{background:#2d7a1e}.wbf-v9{background:#8B4513}
+.wb-pct{font-size:22px;font-weight:700;letter-spacing:-1px}
+.wb-sub{font-size:10px;color:#aaa;margin-top:1px}
+
+/* View tabs */
+.view-tabs{display:flex;background:#fff;border-bottom:1px solid #e5e5e5}
+.view-tab{padding:8px 16px;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#888;background:none;border-top:none;border-left:none;border-right:none}
+.view-tab.active{color:#1a1a1a;border-bottom-color:#185FA5}
+
+/* Controls */
+.controls{padding:8px 14px;display:flex;gap:6px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #e5e5e5;align-items:center;position:sticky;top:88px;z-index:40}
+.controls input[type=text]{flex:1;min-width:130px;padding:6px 10px;font-size:12px;border:1px solid #ddd;border-radius:8px;background:#f8f8f6;color:#1a1a1a;outline:none}
+.controls input:focus{border-color:#D85A30;background:#fff}
+.controls select{padding:6px 9px;font-size:12px;border:1px solid #ddd;border-radius:8px;background:#f8f8f6;color:#1a1a1a;outline:none}
+.fb{padding:3px 10px;font-size:11px;border:1px solid #ddd;border-radius:100px;background:#fff;color:#666;cursor:pointer;white-space:nowrap}
+.fb.active{background:#D85A30;border-color:#D85A30;color:#fff}
+
+/* Beheer bar */
+.beheer-bar{padding:7px 16px;background:#fff8f5;border-bottom:1px solid #f5ddd5;display:none;align-items:center;gap:8px;font-size:12px;color:#944}
+
+/* Table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+th{padding:7px 8px;text-align:left;font-size:10px;font-weight:600;color:#888;border-bottom:1px solid #e5e5e5;background:#fafaf8;white-space:nowrap;text-transform:uppercase;letter-spacing:0.3px;position:sticky;top:134px;z-index:30}
+td{border-bottom:1px solid #f0f0ee;vertical-align:middle}
+tr:hover td{background:#fafaf8}
+.tc{padding:6px 8px;color:#1a1a1a}
+.tnr{padding:6px 8px;font-family:'SF Mono',Monaco,monospace;font-size:11px;color:#888}
+.badge{display:inline-block;padding:1px 6px;border-radius:100px;font-size:10px;font-weight:600}
+.b-frame{background:#deeaf8;color:#185FA5}.b-sheet{background:#dff0d8;color:#2d7a1e}
+.b-v9{background:#f5e6d3;color:#8B4513}.b-cat{background:#f0f0ee;color:#666}
+.sc{padding:3px 4px;text-align:center}
+.sb{width:32px;height:32px;border-radius:8px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;margin:0 auto;transition:all 0.1s;color:#bbb}
+.sb:hover:not(.na){border-color:#aaa;background:#f5f5f3}
+.sb.done{background:#2d7a1e;border-color:#2d7a1e;color:#fff}
+.sb.na{opacity:0.12;cursor:default;pointer-events:none;border-style:dashed}
+.pb{height:4px;background:#eee;border-radius:2px;margin-top:2px}
+.pf{height:100%;border-radius:2px;transition:width 0.3s}
+.qty{display:inline-block;background:#f0f0ee;color:#666;border-radius:100px;padding:1px 6px;font-size:10px;font-weight:500}
+.thumb{width:36px;height:36px;object-fit:cover;border-radius:7px;border:1px solid #e5e5e5;cursor:pointer}
+.no-img{width:36px;height:36px;border-radius:7px;border:1.5px dashed #ddd;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:16px}
+.no-img.cl{cursor:pointer}.no-img.cl:hover{border-color:#D85A30;color:#D85A30}
+.empty{padding:40px;text-align:center;color:#999;font-size:13px}
+.icon-btn{width:28px;height:28px;border:1px solid #e0e0e0;border-radius:7px;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+.icon-btn:hover{background:#f5f5f3}
+.icon-btn.red{border-color:#f5c5c5}.icon-btn.red:hover{background:#fce8e8}
+.btn.red{border-color:#E24B4A;color:#E24B4A}.btn.red:hover{background:#fce8e8}
+.v9-row td{background:#fffaf5}
+.v9-row:hover td{background:#fff5ec}
+.section-hdr td{background:#f5f5f3;padding:6px 8px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid #e5e5e5}
+
+/* Modals */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;z-index:100}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.15);padding:22px;width:460px;max-width:96vw;max-height:92vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.fr{margin-bottom:11px}
+.fr label{display:block;font-size:10px;font-weight:700;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.4px}
+.fr input:not([type=file]):not([type=checkbox]),.fr select,.fr textarea{width:100%;padding:8px 10px;font-size:13px;border:1px solid #ddd;border-radius:8px;background:#fafaf8;color:#1a1a1a;outline:none}
+.fr input:focus,.fr select:focus{border-color:#D85A30;background:#fff}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.v9-checklist{display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:260px;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:8px;background:#fafaf8}
+.v9-check{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:12px}
+.v9-check:hover{background:#f0f0ee}
+.v9-check input{width:14px;height:14px;cursor:pointer;accent-color:#D85A30}
+.img-preview{width:100%;height:120px;object-fit:cover;border-radius:8px;margin-top:7px}
+.lightbox-img{max-width:92vw;max-height:85vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+.pin-box{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0}
+.pin-box input{width:130px;padding:11px;font-size:24px;text-align:center;letter-spacing:10px;border:1.5px solid #ddd;border-radius:10px;background:#fafaf8;outline:none}
+.pin-box input:focus{border-color:#D85A30}
+.pin-err{color:#c0392b;font-size:12px;display:none}
+.order-info-bar{padding:8px 16px;background:#f8f8f6;border-bottom:1px solid #eee;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:#666}
+.order-info-bar b{color:#1a1a1a}
+@media(max-width:640px){
+  .tb-hide{display:none}
+  .controls{top:51px}
+  th{top:97px}
+  .v9-checklist{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">GOBA <em>×</em> Flame Tracker</div>
+  <span class="conn" id="conn-status">Verbinden...</span>
+  <div style="display:flex;gap:6px;margin-left:auto;align-items:center;flex-wrap:wrap">
+    <span id="order-count" style="font-size:11px;color:#999"></span>
+    <span id="naam-indicator" style="display:none;font-size:12px;background:#EAF3DE;color:#2d7a1e;padding:3px 10px;border-radius:100px;cursor:pointer" onclick="uitloggen()" title="Klik om uit te loggen">👤 </span>
+    <button class="btn" id="beheer-btn" onclick="promptPin()">⚙ Beheer</button>
+  </div>
+</div>
+
+<div class="beheer-bar" id="beheer-bar">
+  ✏️ Beheermodus actief
+  <button class="btn accent" onclick="openNewOrderModal()" style="margin-left:auto">+ Nieuwe order</button>
+  <button class="btn" onclick="openPartsModal()">📋 Onderdelen beheer</button>
+  <button class="btn" onclick="exitBeheer()">🔒 Vergrendelen</button>
+</div>
+
+<div class="order-bar" id="order-bar">
+  <div id="order-tabs"></div>
+  <button class="add-order-btn" id="add-order-btn" style="display:none" onclick="openNewOrderModal()">+ Order</button>
+</div>
+
+<div id="main-content">
+  <div class="no-orders" id="no-orders" style="display:none">
+    <h2>Nog geen orders</h2>
+    <p>Ga naar beheermodus om een nieuwe order aan te maken.</p>
+    <button class="btn accent" onclick="promptPin()">⚙ Beheermodus openen</button>
+  </div>
+
+  <div id="order-view" style="display:none">
+    <div class="wb-progress">
+      <div class="wb-card">
+        <div class="wb-label"><b>Frame</b> werkbon<span id="frame-count">–</span></div>
+        <div class="wb-bar"><div class="wb-fill wbf-frame" id="frame-fill" style="width:0%"></div></div>
+        <div class="wb-pct" id="frame-pct" style="color:#185FA5">0%</div>
+        <div class="wb-sub" id="frame-sub"></div>
+      </div>
+      <div class="wb-card">
+        <div class="wb-label"><b>Sheet</b> werkbon<span id="sheet-count">–</span></div>
+        <div class="wb-bar"><div class="wb-fill wbf-sheet" id="sheet-fill" style="width:0%"></div></div>
+        <div class="wb-pct" id="sheet-pct" style="color:#2d7a1e">0%</div>
+        <div class="wb-sub" id="sheet-sub"></div>
+      </div>
+      <div class="wb-card" id="v9-card" style="display:none">
+        <div class="wb-label"><b>V9000</b> opties<span id="v9-count">–</span></div>
+        <div class="wb-bar"><div class="wb-fill wbf-v9" id="v9-fill" style="width:0%"></div></div>
+        <div class="wb-pct" id="v9-pct" style="color:#8B4513">0%</div>
+        <div class="wb-sub" id="v9-sub"></div>
+      </div>
+      <div class="wb-card" id="asm-card" style="display:none;border-left:3px solid #8B4513">
+        <div class="wb-label"><b id="asm-card-title">Samenstelling</b><span id="asm-count">–</span></div>
+        <div class="wb-bar"><div class="wb-fill" id="asm-fill" style="width:0%;background:#8B4513"></div></div>
+        <div class="wb-pct" id="asm-pct" style="color:#8B4513">0%</div>
+        <div class="wb-sub" id="asm-sub"></div>
+      </div>
+    </div>
+
+    <div class="order-info-bar" id="order-info-bar"></div>
+
+    <div class="view-tabs">
+      <button class="view-tab active" onclick="setView('alle',this)">Alle onderdelen</button>
+      <button class="view-tab" onclick="setView('frame',this)">Frame (V7000)</button>
+      <button class="view-tab" onclick="setView('sheet',this)">Sheet (V7000)</button>
+      <button class="view-tab" onclick="setView('v9',this)" id="v9-tab" style="display:none">V9000 opties</button>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="search" placeholder="Zoek op nummer of omschrijving..." oninput="render()">
+      <select id="asm-filter" onchange="setAsmFilter()" style="max-width:220px"><option value="">Alle samenstellingen</option></select>
+      <select id="cat-filter" onchange="render()"><option value="">Alle categorieën</option></select>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="fb active" onclick="setSF('alle',this)">Alle</button>
+        <button class="fb" onclick="setSF('open',this)">Niet gestart</button>
+        <button class="fb" onclick="setSF('lopend',this)">In productie</button>
+        <button class="fb" onclick="setSF('klaar',this)">Gereed</button>
+        <button class="fb" onclick="setSF('uit',this)">Uitgeleverd</button>
+      </div>
+    </div>
+
+    <div class="tw">
+    <table>
+    <thead>
+    <tr>
+      <th style="width:36px"></th>
+      <th style="width:115px">Partnummer</th>
+      <th>Omschrijving</th>
+      <th style="width:30px;text-align:center" class="tb-hide">Stk</th>
+      <th style="width:100px" class="tb-hide">Werkbon / Cat.</th>
+      <th style="width:120px" class="tb-hide">Samenstelling</th>
+      <th style="width:44px;text-align:center">Ontv.</th>
+      <th style="width:44px;text-align:center">Ontbr.</th>
+      <th style="width:44px;text-align:center">Kant.</th>
+      <th style="width:44px;text-align:center">Lass.</th>
+      <th style="width:44px;text-align:center">Ger.</th>
+      <th style="width:44px;text-align:center">Uitg.</th>
+      <th style="width:50px">Voortg.</th>
+      <th id="action-col" style="width:60px;display:none"></th>
+    </tr>
+    </thead>
+    <tbody id="tbody"><tr><td colspan="12" class="empty">Laden...</td></tr></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- Naam modal -->
+<div class="overlay" id="naam-modal">
+<div class="modal" style="width:320px">
+  <h3>🔑 Inloggen</h3>
+  <p style="font-size:13px;color:#888;margin-bottom:16px">Voer je personeelsnummer in.</p>
+  <div class="fr">
+    <label>Personeelsnummer</label>
+    <input id="naam-input" placeholder="bijv. 1001" inputmode="numeric" style="font-size:22px;letter-spacing:4px;text-align:center" onkeydown="if(event.key==='Enter')saveNaam()">
+  </div>
+  <p id="naam-err" style="color:#c0392b;font-size:12px;display:none;margin-top:4px">Onbekend personeelsnummer</p>
+  <div class="modal-btns">
+    <button class="btn accent" onclick="saveNaam()">Inloggen</button>
+  </div>
+</div>
+</div>
+
+<!-- Bevestiging ontklikken modal -->
+<div class="overlay" id="bevestig-modal">
+<div class="modal" style="width:340px">
+  <h3>↩️ Stap terugdraaien?</h3>
+  <p id="bevestig-tekst" style="font-size:13px;color:#666;margin-bottom:16px"></p>
+  <div class="modal-btns">
+    <button class="btn" onclick="closeOverlay('bevestig-modal')">Annuleren</button>
+    <button class="btn red" id="bevestig-btn" onclick="confirmUncheck()">Ja, terugdraaien</button>
+  </div>
+</div>
+</div>
+
+<!-- Pin modal -->
+<div class="overlay" id="pin-modal">
+<div class="modal" style="width:280px">
+  <h3>🔒 Beheermodus</h3>
+  <div class="pin-box">
+    <input type="password" id="pin-input" maxlength="4" inputmode="numeric" placeholder="••••" onkeydown="if(event.key==='Enter')checkPin()">
+    <p class="pin-err" id="pin-err">Verkeerde pincode</p>
+  </div>
+  <div class="modal-btns">
+    <button class="btn" onclick="closeOverlay('pin-modal')">Annuleren</button>
+    <button class="btn accent" onclick="checkPin()">Inloggen</button>
+  </div>
+</div>
+</div>
+
+<!-- Nieuwe order modal -->
+<div class="overlay" id="order-modal">
+<div class="modal">
+  <h3>🔥 Nieuwe order aanmaken</h3>
+  <div class="fr"><label>Order nummer</label><input id="o-nr" placeholder="bijv. FT070" style="font-size:16px;font-weight:600"></div>
+  <div class="fr"><label>Omschrijving (optioneel)</label><input id="o-desc" placeholder="bijv. KLM — 2 trainers batch"></div>
+  <div class="fr">
+    <label>V9000 opties — vink aan wat de klant heeft besteld</label>
+    <div class="v9-checklist" id="v9-checklist"></div>
+  </div>
+  <div class="modal-btns">
+    <button class="btn" onclick="closeOverlay('order-modal')">Annuleren</button>
+    <button class="btn accent" onclick="saveOrder()">Order aanmaken</button>
+  </div>
+</div>
+</div>
+
+<!-- Onderdeel bewerken modal -->
+<div class="overlay" id="item-modal">
+<div class="modal">
+  <h3 id="modal-title">Onderdeel bewerken</h3>
+  <div class="fr"><label>Partnummer</label><input id="f-nr" placeholder="bijv. 1500922-500"></div>
+  <div class="fr"><label>Omschrijving</label><input id="f-desc"></div>
+  <div class="fr"><label>Aantal</label><input id="f-qty" type="number" min="1" value="1"></div>
+  <div class="fr"><label>Werkbon</label><select id="f-wb" onchange="updateCatOpts()"><option value="frame">Frame (V7000)</option><option value="sheet">Sheet (V7000)</option><option value="v9">V9000 optie</option></select></div>
+  <div class="fr"><label>Categorie</label><select id="f-cat"></select></div>
+  <div class="fr"><label>Type</label><select id="f-type"><option value="buis">Buis</option><option value="plaat">Plaat</option><option value="asm">Samenstelling</option></select></div>
+  <div class="fr">
+    <label>Afbeelding</label>
+    <input type="file" id="f-img" accept="image/*" onchange="previewImg()">
+    <img id="f-img-preview" class="img-preview" style="display:none" alt="Preview">
+    <div id="f-img-current" style="margin-top:4px;font-size:11px;color:#888"></div>
+  </div>
+  <div class="modal-btns">
+    <button class="btn" onclick="closeOverlay('item-modal')">Annuleren</button>
+    <button class="btn accent" id="save-btn" onclick="saveItem()">Opslaan</button>
+  </div>
+</div>
+</div>
+
+<!-- Parts beheer modal -->
+<div class="overlay" id="parts-modal">
+<div class="modal" style="width:500px">
+  <h3>📋 Onderdelen beheer</h3>
+  <p style="font-size:12px;color:#888;margin-bottom:12px">Wijzigingen gelden voor alle nieuwe orders. Bestaande orders worden niet aangepast.</p>
+  <div class="fr">
+    <button class="btn accent" onclick="closeOverlay('parts-modal');openModal('add')">+ Nieuw onderdeel toevoegen</button>
+  </div>
+  <div class="modal-btns">
+    <button class="btn accent" onclick="closeOverlay('parts-modal')">Sluiten</button>
+  </div>
+</div>
+</div>
+
+<!-- Personeel modal -->
+<div class="overlay" id="personeel-modal">
+<div class="modal" style="width:420px">
+  <h3>👥 Personeel beheer</h3>
+  <div id="personeel-lijst" style="margin-bottom:14px"></div>
+  <div style="display:flex;gap:8px;align-items:flex-end">
+    <div class="fr" style="margin:0;flex:1"><label>Code</label><input id="p-code" placeholder="bijv. 1010" style="width:100%"></div>
+    <div class="fr" style="margin:0;flex:2"><label>Naam/initialen</label><input id="p-naam" placeholder="bijv. WG" style="width:100%"></div>
+    <button class="btn accent" onclick="addPersoneel()">+ Toevoegen</button>
+  </div>
+  <div class="modal-btns" style="margin-top:16px">
+    <button class="btn accent" onclick="closeOverlay('personeel-modal')">Sluiten</button>
+  </div>
+</div>
+</div>
+
+<!-- Lightbox -->
+<div class="overlay" id="lightbox" onclick="closeOverlay('lightbox')" style="cursor:zoom-out">
+  <img class="lightbox-img" id="lightbox-img" src="" alt="Foto">
+</div>
+
+<script>
+const SB='https://vjljyvdvyagaaoxohygx.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqbGp5dmR2eWFnYWFveG9oeWd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMDA1MTEsImV4cCI6MjA5Nzc3NjUxMX0.EtUojMEGmc0QKRKeyQARshoniMez9a20RoZ2NmcPSVE';
+const PIN='2315';
+let gebruikerNaam = localStorage.getItem('flame_naam') || '';
+let gebruikerCode = localStorage.getItem('flame_code') || '';
+let personeel = []; // loaded from Supabase
+let pendingUncheck = null;
+
+async function laadPersoneel(){
+  try{
+    const r = await sbFetch('flame_personeel?select=*&actief=eq.true&order=code');
+    if(Array.isArray(r)) personeel = r;
+  }catch(e){console.error('Personeel laden mislukt',e);}
+}
+
+function checkNaamEnStart(){
+  if(!gebruikerNaam){
+    document.getElementById('naam-modal').classList.add('open');
+    setTimeout(()=>document.getElementById('naam-input').focus(),100);
+  } else {
+    document.getElementById('naam-indicator').textContent = gebruikerNaam;
+    document.getElementById('naam-indicator').style.display='';
+  }
+}
+
+function saveNaam(){
+  const code = document.getElementById('naam-input').value.trim();
+  if(!code){alert('Vul je personeelsnummer in.');return;}
+  const medewerker = personeel.find(p=>p.code===code);
+  if(!medewerker){
+    document.getElementById('naam-err').style.display='';
+    document.getElementById('naam-input').value='';
+    document.getElementById('naam-input').focus();
+    return;
+  }
+  document.getElementById('naam-err').style.display='none';
+  gebruikerNaam = medewerker.naam;
+  gebruikerCode = code;
+  localStorage.setItem('flame_naam', medewerker.naam);
+  localStorage.setItem('flame_code', code);
+  closeOverlay('naam-modal');
+  document.getElementById('naam-indicator').textContent = medewerker.naam;
+  document.getElementById('naam-indicator').style.display='';
+}
+
+function uitloggen(){
+  gebruikerNaam='';gebruikerCode='';
+  localStorage.removeItem('flame_naam');
+  localStorage.removeItem('flame_code');
+  document.getElementById('naam-indicator').style.display='none';
+  document.getElementById('naam-input').value='';
+  document.getElementById('naam-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('naam-input').focus(),100);
+}
+const STEPS=['ontv','ont','kant','las','klaar','uit'];
+const FRAME_CATS=['Main structure','Technical room','Seats','Galley','Back wall','Lavatory','Divider wall','Checkerplate floor','Rolled strips','Aluminium plates'];
+const SHEET_CATS=['Upper panels','Seats','Technical room','Drain','Back wall','Loose parts','Galley','Luggage bin','Lavatory','Divider wall','Simulated laptop','Mounting trims'];
+const V9_CATS=['Connection trim','Raamframe','Tribuneplaat','Overig'];
+
+// V9000 opties masterlijst
+const V9_OPTIONS=[
+  {nr:'1601230-006',desc:'Staander connection trim links',qty:1,type:'plaat',cat:'Connection trim'},
+  {nr:'1700492-001',desc:'Rand raamframe dunne wand links',qty:1,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-002',desc:'Staander Raamframe',qty:2,type:'buis',cat:'Raamframe'},
+  {nr:'1700492-003',desc:'Bevestigingslip raamframe',qty:2,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-004',desc:'Rand raamframe dunne wand rechts',qty:1,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-005',desc:'Bovenbalk raamframe',qty:2,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-006',desc:'Onderbalk raamframe',qty:2,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-007',desc:'U-beugel ligger raamframe',qty:12,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-008',desc:'Onderbalk raamframe schuifdeur',qty:1,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-009',desc:'Bovenrand raamframe schuifdeur',qty:1,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-011',desc:'Montagelip raamframe',qty:4,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-012',desc:'Steunplaat schuifdeur windowframe',qty:2,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-013',desc:'Bevestigingslip raamframe lang',qty:2,type:'plaat',cat:'Raamframe'},
+  {nr:'1700492-015',desc:'Tribuneplaat 1',qty:4,type:'plaat',cat:'Tribuneplaat'},
+  {nr:'1700492-016',desc:'Tribuneplaat links boven binnen',qty:1,type:'plaat',cat:'Tribuneplaat'},
+  {nr:'1700492-017',desc:'Tribuneplaat rechts boven binnen',qty:1,type:'plaat',cat:'Tribuneplaat'},
+  {nr:'1700492-018',desc:'Tribuneplaat links onder buiten',qty:1,type:'plaat',cat:'Tribuneplaat'},
+  {nr:'1700492-019',desc:'Tribuneplaat rechts onder buiten',qty:1,type:'plaat',cat:'Tribuneplaat'},
+  {nr:'1700492-020',desc:'Tribuneplaat voor',qty:2,type:'plaat',cat:'Tribuneplaat'},
+  {nr:'1700763-001',desc:'Koppelplaat bovenop container',qty:2,type:'plaat',cat:'Overig'},
+  {nr:'1900726-005',desc:'Bovenrand connection trim',qty:4,type:'plaat',cat:'Connection trim'},
+  {nr:'2000752-001',desc:'Staander connection trim rechts',qty:1,type:'plaat',cat:'Connection trim'},
+  {nr:'2101042-001',desc:'Traanplaat connection trim linker raam',qty:1,type:'plaat',cat:'Connection trim'},
+  {nr:'2101042-002',desc:'Traanplaat connection trim middenraam',qty:1,type:'plaat',cat:'Connection trim'},
+  {nr:'2101042-003',desc:'Traanplaat connection trim schuifdeur',qty:1,type:'plaat',cat:'Connection trim'},
+  {nr:'2101042-004',desc:'Traanplaat connection trim tech kant',qty:1,type:'plaat',cat:'Connection trim'},
+  {nr:'2101042-005',desc:'Traanplaat connection trim deurzijde',qty:1,type:'plaat',cat:'Connection trim'},
+];
+
+const V7_SEED=[
+["1300053-142","Buis 40 x 40 x 1.5",4,"buis","frame","Main structure"],["1500182-005","Buis 40 x 40 x 2",4,"buis","frame","Main structure"],["1500182-007","Montageplaat stoelen vloer",4,"plaat","frame","Seats"],["1500182-008","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-009","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-012","Kopplaat voor 60 x 40",12,"plaat","frame","Main structure"],["1500182-013","Buis 40 x 40 x 2",4,"buis","frame","Main structure"],["1500182-020","Lip 85 hoog",57,"plaat","frame","Main structure"],["1500182-022","Kopplaat voor 50 x 50",6,"plaat","frame","Main structure"],["1500182-023","Buis 50 x 50 x 2",1,"buis","frame","Main structure"],["1500182-024","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-025","Buis 40 x 40 x 2",4,"buis","frame","Main structure"],["1500182-031","Buis 60 x 40 x 2",6,"buis","frame","Main structure"],["1500182-032","2x lip overstaand",26,"plaat","frame","Main structure"],["1500182-040","Lip onderkant stoelen",2,"plaat","frame","Seats"],["1500182-141","Hoek lip",58,"plaat","frame","Main structure"],["1500182-142","Plaatdeel",2,"plaat","frame","Main structure"],["1500182-143","2x Lip 90grad",12,"plaat","frame","Main structure"],["1500182-144","Plaatdeel",1,"plaat","frame","Main structure"],["1500182-169","Rond lip",36,"plaat","frame","Main structure"],["1500182-177","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500182-198","Verbindingsplaat lengte 125",9,"plaat","frame","Main structure"],["1500182-305","Scharnier lip lavatory",2,"plaat","frame","Lavatory"],["1500182-330","Buis 40 x 2",1,"buis","frame","Main structure"],["1500182-331","Buis 40 x 2",1,"buis","frame","Main structure"],["1500182-332","Lasbocht",1,"buis","frame","Main structure"],["1500182-388","Buis 26.4 x 5",1,"buis","frame","Main structure"],["1500182-411","Draaibusje",3,"buis","frame","Main structure"],["1500182-412","Montageblokje deur lavatory",3,"plaat","frame","Lavatory"],
+["1500922-001","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-002","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-003","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-004","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-007","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-008","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-009","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-010","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-011","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-012","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-015","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-017","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-019","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-020","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-021","Buis 80 x 40 x 4",1,"buis","frame","Main structure"],["1500922-022","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-023","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-025","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-027","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-028","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-035","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-036","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-038","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-039","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-040","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-042","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-043","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-044","Buis 40 x 40 x 1.5",4,"buis","frame","Main structure"],["1500922-046","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-047","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-048","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-051","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-052","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-053","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-054","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-055","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-059","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-060","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-063","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-065","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-066","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-067","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-072","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-073","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-074","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-076","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-077","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-078","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-079","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-081","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-084","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-085","Buis 40 x 40 x 2",1,"buis","frame","Main structure"],["1500922-087","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-106","Buis 100 x 40 x 2",1,"buis","frame","Main structure"],["1500922-109","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-110","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-111","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-112","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-113","Buis 40 x 40 x 1.5",4,"buis","frame","Main structure"],["1500922-114","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-121","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-122","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-132","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-133","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-134","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-135","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-136","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-137","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-138","Buis 40 x 40 x 1.5",8,"buis","frame","Seats"],["1500922-139","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-140","Buis 40 x 40 x 1.5",4,"buis","frame","Seats"],["1500922-154","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-157","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-158","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-159","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-162","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-163","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-165","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-166","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-167","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-168","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-170","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-171","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-172","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-173","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-174","Buis 40 x 40 x 1.5",5,"buis","frame","Main structure"],["1500922-177","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-178","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-179","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-182","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-183","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-184","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-185","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-186","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-188","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-194","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-301","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-302","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-304","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-305","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-306","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-308","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-322","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-331","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-334","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-337","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-338","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-339","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-340","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-343","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-344","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-345","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-347","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-348","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-351","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-352","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-360","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-363","Buis 40 x 40 x 1.5",3,"buis","frame","Main structure"],["1500922-364","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-369","Buis 40 x 40 x 1.5",1,"buis","frame","Main structure"],["1500922-410","Buis 40 x 40 x 1.5",2,"buis","frame","Main structure"],["1500922-414","Buis 50 x 50 x 2",1,"buis","frame","Main structure"],["1500922-447","Buis 40 x 20 x 1.5",1,"buis","frame","Main structure"],["1500922-450","Buis 40 x 1",1,"buis","frame","Main structure"],
+["1500922-013","Gewalste Plaat Lavatory tech side",1,"plaat","frame","Lavatory"],["1500922-014","Schertsplaat",8,"plaat","frame","Checkerplate floor"],["1500922-029","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-041","45 lip volledig",17,"plaat","frame","Main structure"],["1500922-045","Gewalste plaat Cabin",2,"plaat","frame","Rolled strips"],["1500922-049","Gewalste plaat Divider Wall",1,"plaat","frame","Divider wall"],["1500922-061","Gewalste plaat Galley boven",1,"plaat","frame","Galley"],["1500922-070","Inlasplaat onderkant galley",1,"plaat","frame","Galley"],["1500922-071","Gewalste plaat Galley onder",1,"plaat","frame","Galley"],["1500922-075","Lip 45 Half",4,"plaat","frame","Main structure"],["1500922-083","Achterwand stoelen midden",1,"plaat","frame","Back wall"],["1500922-090","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-091","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-092","Traanplaat 5/6.6",2,"plaat","frame","Checkerplate floor"],["1500922-097","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-117","Zijpaneel Tech kast Links",1,"plaat","sheet","Technical room"],["1500922-118","Zijpaneel Tech kast Rechts",1,"plaat","sheet","Technical room"],["1500922-119","Deur Tech kast",1,"plaat","sheet","Technical room"],["1500922-123","Lip 75",2,"plaat","frame","Main structure"],["1500922-124","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-125","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-127","Traanplaat 5/6.5",1,"plaat","frame","Checkerplate floor"],["1500922-141","Binnenplaat branderstoel",1,"plaat","sheet","Seats"],["1500922-142","Binnenplaat Stoelen",3,"plaat","sheet","Seats"],["1500922-143","Buitenplaat Stoelen",3,"plaat","sheet","Seats"],["1500922-144","Buitenkant Branderstoel",1,"plaat","sheet","Seats"],["1500922-150","Verbindingsplaat lengte 200",2,"plaat","frame","Main structure"],["1500922-175","Lav paneel links onder",1,"plaat","sheet","Lavatory"],["1500922-176","Paneel Cabin Lavatory Onder",1,"plaat","sheet","Lavatory"],["1500922-180","Paneel Lav + cabin rechts boven",2,"plaat","sheet","Lavatory"],["1500922-181","Paneel Lav + Cabin Rechts Midden",2,"plaat","sheet","Lavatory"],["1500922-187","Achterwand Lavatory",1,"plaat","sheet","Lavatory"],["1500922-193","Lip 127 MM",8,"plaat","frame","Main structure"],["1500922-195","Achterwand stoelen Lav kant onder",1,"plaat","sheet","Back wall"],["1500922-196","Achterwand stoelen Galleykant",1,"plaat","sheet","Back wall"],["1500922-198","Plaatdeel",12,"plaat","sheet","Loose parts"],["1500922-303","Paneel Lav voorkant naast deur",1,"plaat","sheet","Lavatory"],["1500922-307","Plafond Lavatory",1,"plaat","sheet","Lavatory"],["1500922-309","Paneel Tussenwand Galley Onder",1,"plaat","sheet","Divider wall"],["1500922-310","Paneel tussenwand galley boven",1,"plaat","sheet","Divider wall"],["1500922-311","Blad Tafeltje Tussenwand",1,"plaat","sheet","Divider wall"],["1500922-312","Onderkant Tafeltje Tussenwand",1,"plaat","sheet","Divider wall"],["1500922-313","Paneel Tussenwand Cabin Onder",1,"plaat","sheet","Divider wall"],["1500922-314","Paneel tussenwand Cabin Boven",1,"plaat","sheet","Divider wall"],["1500922-325","Afwatering tafel divider wall",1,"plaat","sheet","Drain"],["1500922-327","Divider wall lip",2,"plaat","sheet","Divider wall"],["1500922-329","Achterplaat tafel Divider Wall",1,"plaat","sheet","Divider wall"],["1500922-330","Tussenplaat Tafel Divider Wall",1,"plaat","sheet","Divider wall"],["1500922-333","Bodem oven met gat voor brander",1,"plaat","sheet","Galley"],["1500922-336","Bodemplaat Oven",1,"plaat","sheet","Galley"],["1500922-342","Paneel Galley boven oven",1,"plaat","sheet","Galley"],["1500922-346","Onderpaneel Aanrecht Galley",2,"plaat","sheet","Galley"],["1500922-349","Paneel kruisframe links boven",1,"plaat","sheet","Upper panels"],["1500922-350","Paneel kruisframe rechts onder",1,"plaat","sheet","Upper panels"],["1500922-353","Onderpaneel voorkant Galley",1,"plaat","sheet","Galley"],["1500922-354","Bovenpaneel voorkant Galley",1,"plaat","sheet","Galley"],["1500922-356","Inlaspaneel Galley Midden",1,"plaat","sheet","Galley"],["1500922-357","Inlaspaneel Galley Boven",1,"plaat","sheet","Galley"],["1500922-358","Aanrechtblad Galley",1,"plaat","sheet","Galley"],["1500922-361","U profiel gasveren luiken",3,"plaat","sheet","Mounting trims"],["1500922-365","Zijkanten Waterpunt Galley",1,"plaat","sheet","Galley"],["1500922-366","Achterkant Waterpunt Galley",1,"plaat","sheet","Galley"],["1500922-367","Lekbak Tappunt Galley",1,"plaat","sheet","Drain"],["1500922-368","Lekrooster Tappunt Galley",1,"plaat","sheet","Drain"],["1500922-370","Dubbele achterwand oven",1,"plaat","sheet","Galley"],["1500922-371","Aflopende Lekplaat oven",1,"plaat","sheet","Drain"],["1500922-372","Lekbak Oven",1,"plaat","sheet","Drain"],["1500922-373","Achterwand + zijwanden oven",1,"plaat","sheet","Galley"],["1500922-374","Bovenkant oven",1,"plaat","sheet","Galley"],["1500922-375","Deur Oven buitenkant",1,"plaat","sheet","Galley"],["1500922-377","Achterkant Deur oven",1,"plaat","sheet","Galley"],["1500922-378","Ronde achterwand galley",1,"plaat","sheet","Galley"],["1500922-384","Strip tussenbalken overhead locker",6,"plaat","sheet","Luggage bin"],["1500922-390","Buitenkant deur overhead locker",3,"plaat","sheet","Luggage bin"],["1500922-392","Binnenkant deur overhead locker",2,"plaat","sheet","Luggage bin"],["1500922-394","Handgreep deur overhead locker",3,"plaat","sheet","Luggage bin"],["1500922-396","Paneel Lavatory Links Boven",1,"plaat","sheet","Lavatory"],["1500922-398","Paneel Lavatory Links Midden",1,"plaat","sheet","Lavatory"],["1500922-399","WC Deksel",1,"plaat","sheet","Lavatory"],["1500922-400","WC achterplaat",1,"plaat","sheet","Lavatory"],["1500922-401","WC Helft Links",1,"plaat","sheet","Lavatory"],["1500922-402","Achterwand cabin lav kant boven",1,"plaat","sheet","Back wall"],["1500922-404","Verbindingsplaat achterwand stoelen",1,"plaat","sheet","Back wall"],["1500922-405","Bovenpaneel Tech kast",1,"plaat","sheet","Technical room"],["1500922-406","Onderpaneel Tech kast",1,"plaat","sheet","Technical room"],["1500922-407","Beugel voor leidingen achterwand",1,"plaat","sheet","Mounting trims"],["1500922-412","Afdekplaat afzuiging oven",1,"plaat","sheet","Galley"],["1500922-415","Afdekplaat brander middenvak overhead locker",1,"plaat","sheet","Luggage bin"],["1500922-417","Montageplaat afzuiging overhead locker",3,"plaat","sheet","Luggage bin"],["1500922-418","Afdekplaat afzuiging overhead locker",1,"plaat","sheet","Luggage bin"],["1500922-419_L","Rand Deksel overhead locker Links",3,"plaat","sheet","Luggage bin"],["1500922-419_R","Rand deksel overhead locker Rechts",3,"plaat","sheet","Luggage bin"],["1500922-425","Afdekplaat vakken overhead locker",2,"plaat","sheet","Luggage bin"],["1500922-426","Bevestigingsstrip overhead locker",4,"plaat","sheet","Mounting trims"],["1500922-427","Vlotterbeugel Laptop",1,"plaat","sheet","Simulated laptop"],["1500922-430","Gootsteenblad Lavatory",1,"plaat","sheet","Lavatory"],["1500922-431","Bovenrand gootsteen Lavatory",1,"plaat","sheet","Lavatory"],["1500922-432","Voorpaneel Gootsteen Lavatory",1,"plaat","sheet","Lavatory"],["1500922-433","Achter en zijpanelen kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-434","Voorpaneel vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-435","Bovenkant Kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-436","Onderrand Kast Vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-437","Onderkant kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-438","Afwateringsplaat Vuilnisbak Boven",1,"plaat","sheet","Lavatory"],["1500922-439","Afwatering Vuilnisbak onder",1,"plaat","sheet","Lavatory"],["1500922-440","Montagepaneel achterkant kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-441","Kolom voorkant lavatory",1,"plaat","sheet","Lavatory"],["1500922-443","Zijpaneel afzuiging kast vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-444","Afwerkstrip Onderkant Kast Vuilnisbak",1,"plaat","sheet","Mounting trims"],["1500922-445","Montageplaat pomp zijkant kast Vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-446","Vuilnisschacht Zij en Achterkant",1,"plaat","sheet","Lavatory"],["1500922-448","Deurtje vuilnisbak lavatory",1,"plaat","sheet","Lavatory"],["1500922-449","Achterkant deurtje vuilnisbak Lavatory",1,"plaat","sheet","Lavatory"],["1500922-451","Kopplaat 40 x 20",2,"plaat","frame","Main structure"],["1500922-452","Deksel vuilnisbak",1,"plaat","sheet","Lavatory"],["1500922-453","Duw arm deksel vuilnisbak",2,"plaat","sheet","Lavatory"],["1500922-454","Vuilnisschacht Voorkant",1,"plaat","sheet","Lavatory"],
+["1500922-200","Frame Firetrainer Totaal",1,"asm","frame","Main structure"],["1500922-222","Kast tech ruimte",1,"asm","frame","Technical room"],["1500922-224","Frame zitting stoel",4,"asm","frame","Seats"],["1500922-247","Tafel laptop",1,"asm","sheet","Simulated laptop"],["1500922-260","Oven Galley",1,"asm","sheet","Galley"],["1500922-272","Watertappunt Galley",1,"asm","sheet","Galley"],["1500922-275","Deur Oven",1,"asm","sheet","Galley"],["1500922-281","Deur overhead locker Links",1,"asm","sheet","Luggage bin"],["1500922-290","Kastje vuilnisbak lavatory",1,"asm","sheet","Lavatory"],["1500922-292","Deur vuilnisbak Lavatory",1,"asm","sheet","Lavatory"],["1500922-293","Verdeler lavatory",1,"asm","sheet","Lavatory"],["1500922-295","WC",1,"asm","sheet","Lavatory"],["1500922-296","Gootsteenblad Lavatory",1,"asm","sheet","Lavatory"],["1500922-359","Electra paneel Tech Lav",1,"plaat","sheet","Technical room"],["1500922-388","Lassok",4,"buis","frame","Main structure"],
+];
+
+// State
+let orders=[], baseParts=[], currentOrderId=null, viewFilter='alle', sfFilter='alle', asmFilter='', beheerMode=false, editNr=null;
+
+function sbFetch(path,method='GET',body){
+  return fetch(SB+'/rest/v1/'+path,{
+    method,
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json',
+      'Prefer':method==='POST'?'return=representation,resolution=merge-duplicates':''},
+    body:body?JSON.stringify(body):undefined
+  }).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(JSON.stringify(j));return j;});
+}
+
+function allowedSteps(type){
+  if(type==='buis')return{ontv:true,ont:false,kant:false,las:true,klaar:true,uit:true};
+  if(type==='asm') return{ontv:true,ont:true,kant:true,las:true,klaar:true,uit:true};
+  return               {ontv:true,ont:true,kant:true,las:false,klaar:true,uit:true};
+}
+function getProgress(part){
+  const al=allowedSteps(part.type);
+  const list=STEPS.filter(s=>al[s]);
+  const done=list.filter(s=>part.steps?.[s]).length;
+  return{done,total:list.length,pct:list.length>0?Math.round((done/list.length)*100):0};
+}
+function getStatus(part){
+  if(part.steps?.uit)return'uit';
+  if(part.steps?.klaar)return'klaar';
+  if(getProgress(part).done>0)return'lopend';
+  return'open';
+}
+
+async function loadData(){
+  try{
+    // Load base parts + orders + progress
+    const[parts,ordersRaw,voortgang]=await Promise.all([
+      sbFetch('flame_onderdelen?select=*&order=nr'),
+      sbFetch('flame_orders?select=*&order=created_at'),
+      sbFetch('flame_voortgang2?select=*')
+    ]);
+
+    document.getElementById('conn-status').textContent='Verbonden ✓';
+    document.getElementById('conn-status').className='conn ok';
+
+    // Seed base parts if empty
+    if(!parts.length){
+      await seedBaseParts();
+      return function openPersoneelModal(){
+  renderPersoneelLijst();
+  document.getElementById('personeel-modal').classList.add('open');
+}
+function renderPersoneelLijst(){
+  document.getElementById('personeel-lijst').innerHTML = personeel.length
+    ? personeel.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #eee">
+        <span style="font-family:monospace;background:#f0f0ee;padding:2px 8px;border-radius:6px;font-size:13px">${p.code}</span>
+        <span style="flex:1;font-size:13px">${p.naam}</span>
+        <button class="icon-btn red" onclick="removePersoneel('${p.code}')" title="Verwijderen">🗑</button>
+      </div>`).join('')
+    : '<p style="color:#aaa;font-size:13px">Nog geen medewerkers</p>';
+}
+async function addPersoneel(){
+  const code=document.getElementById('p-code').value.trim();
+  const naam=document.getElementById('p-naam').value.trim();
+  if(!code||!naam){alert('Vul code en naam in.');return;}
+  if(personeel.find(p=>p.code===code)){alert('Code bestaat al.');return;}
+  try{
+    await sbFetch('flame_personeel','POST',{code,naam,actief:true});
+    personeel.push({code,naam,actief:true});
+    document.getElementById('p-code').value='';
+    document.getElementById('p-naam').value='';
+    renderPersoneelLijst();
+  }catch(e){alert('Fout: '+e.message);}
+}
+async function removePersoneel(code){
+  if(!confirm('Medewerker '+code+' verwijderen?'))return;
+  await fetch(SB+'/rest/v1/flame_personeel?code=eq.'+code,{method:'DELETE',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
+  personeel=personeel.filter(p=>p.code!==code);
+  renderPersoneelLijst();
+}
+
+loadData();
+    }
+
+    baseParts=parts.map(p=>({nr:p.nr,desc:p.omschrijving,qty:p.aantal,type:p.type,wb:p.werkbon,cat:p.categorie,img:p.afbeelding_url,sam:p.samenstelling||''}));
+
+    // Build voortgang map: order_id -> nr -> stap -> bool
+    const vmap={};
+    voortgang.forEach(v=>{
+      if(!vmap[v.order_id])vmap[v.order_id]={};
+      if(!vmap[v.order_id][v.onderdeel_nr])vmap[v.order_id][v.onderdeel_nr]={};
+      vmap[v.order_id][v.onderdeel_nr][v.stap]=v.gedaan;
+    });
+
+    orders=ordersRaw.map(o=>{
+      const v9nrs=o.v9_opties||[];
+      const v7parts=baseParts.map(p=>({
+        nr:p.nr,desc:p.desc,qty:p.qty,type:p.type,wb:p.wb,cat:p.cat,img:p.img,sam:p.sam||'',
+        steps:Object.assign({ontv:false,ont:false,kant:false,las:false,klaar:false,uit:false},(vmap[o.id]||{})[p.nr]||{}),
+        stepInfo:(vinfomap[o.id]||{})[p.nr]||{}
+      }));
+      const v9parts=V9_OPTIONS.filter(p=>v9nrs.includes(p.nr)).map(p=>({
+        nr:p.nr,desc:p.desc,qty:p.qty,type:p.type,wb:'v9',cat:p.cat,img:p.img||'',sam:'',
+        steps:Object.assign({ontv:false,ont:false,kant:false,las:false,klaar:false,uit:false},(vmap[o.id]||{})[p.nr]||{})
+      }));
+      return{id:o.id,nr:o.order_nr,desc:o.omschrijving||'',v9nrs,parts:[...v7parts,...v9parts]};
+    });
+
+    document.getElementById('order-count').textContent=orders.length+' order'+(orders.length!==1?'s':'');
+    renderOrderTabs();
+
+    await laadPersoneel();
+    checkNaamEnStart();
+    if(orders.length>0){
+      selectOrder(currentOrderId&&orders.find(o=>o.id===currentOrderId)?currentOrderId:orders[0].id);
+    } else {
+      document.getElementById('no-orders').style.display='';
+      document.getElementById('order-view').style.display='none';
+    }
+  }catch(e){
+    document.getElementById('conn-status').textContent='Verbindingsfout';
+    document.getElementById('conn-status').className='conn err';
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="12" class="empty" style="color:#c0392b">Fout: ${e.message}</td></tr>`;
+    console.error(e);
+  }
+}
+
+async function seedBaseParts(){
+  for(let i=0;i<V7_SEED.length;i+=50){
+    const batch=V7_SEED.slice(i,i+50).map(r=>({nr:r[0],omschrijving:r[1],aantal:r[2],type:r[3],werkbon:r[4],categorie:r[5]}));
+    await sbFetch('flame_onderdelen','POST',batch);
+  }
+}
+
+function selectOrder(id){
+  currentOrderId=id;
+  renderOrderTabs();
+  const order=orders.find(o=>o.id===id);
+  if(!order)return;
+
+  document.getElementById('no-orders').style.display='none';
+  document.getElementById('order-view').style.display='';
+
+  // Show V9 tab if order has v9 parts
+  const hasV9=order.v9nrs&&order.v9nrs.length>0;
+  document.getElementById('v9-tab').style.display=hasV9?'':'none';
+  document.getElementById('v9-card').style.display=hasV9?'':'none';
+
+  // Order info bar
+  document.getElementById('order-info-bar').innerHTML=
+    `<b>${order.nr}</b>${order.desc?' — '+order.desc:''} &nbsp;·&nbsp; V7000 basis + ${order.v9nrs.length} V9000 optie(s)`+
+    (beheerMode?` &nbsp;<button class="btn" style="font-size:11px;padding:3px 8px" onclick="deleteOrder('${id}')">🗑 Order verwijderen</button>`:'');
+
+  updateStats();
+  populateAsmFilter();
+  populateCatFilter();
+  render();
+}
+
+function renderOrderTabs(){
+  const tabs=document.getElementById('order-tabs');
+  tabs.innerHTML=orders.map(o=>{
+    const p=getOrderPct(o);
+    const active=o.id===currentOrderId;
+    return`<button class="order-tab${active?' active':''}" onclick="selectOrder('${o.id}')">
+      ${o.nr} <span class="pct-pill">${p}%</span>
+    </button>`;
+  }).join('');
+}
+
+function getOrderPct(order){
+  if(!order.parts||!order.parts.length)return 0;
+  let done=0,total=0;
+  order.parts.forEach(p=>{const pr=getProgress(p);done+=pr.done;total+=pr.total;});
+  return total>0?Math.round((done/total)*100):0;
+}
+
+async function toggle(nr,step){
+  const order=orders.find(o=>o.id===currentOrderId);
+  if(!order)return;
+  const part=order.parts.find(p=>p.nr===nr);
+  if(!part||!allowedSteps(part.type)[step])return;
+  
+  // Als al aangevinkt: bevestiging vragen
+  if(part.steps[step]){
+    const info = part.stepInfo && part.stepInfo[step];
+    const door = info?.naam ? `Afgetekend door <b>${info.naam}</b>` : 'Afgetekend';
+    const op = info?.tijd ? ` op ${new Date(info.tijd).toLocaleString('nl-NL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}` : '';
+    document.getElementById('bevestig-tekst').innerHTML = `${door}${op}<br><br>Weet je zeker dat je deze stap wilt terugdraaien?`;
+    pendingUncheck = {nr, step, part, orderId: currentOrderId};
+    document.getElementById('bevestig-modal').classList.add('open');
+    return;
+  }
+  
+  // Aanvinken: naam opslaan
+  await doToggle(nr, step, part, true);
+}
+
+async function confirmUncheck(){
+  if(!pendingUncheck)return;
+  const {nr,step,part,orderId} = pendingUncheck;
+  pendingUncheck = null;
+  closeOverlay('bevestig-modal');
+  await doToggle(nr, step, part, false);
+}
+
+async function doToggle(nr, step, part, newVal){
+  part.steps[step] = newVal;
+  if(!part.stepInfo) part.stepInfo = {};
+  if(newVal){
+    part.stepInfo[step] = {naam: gebruikerNaam, tijd: new Date().toISOString()};
+  } else {
+    delete part.stepInfo[step];
+  }
+  updateStats();renderOrderTabs();render();
+  fetch(SB+'/rest/v1/flame_voortgang2',{method:'POST',
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify({order_id:currentOrderId,onderdeel_nr:nr,stap:step,gedaan:newVal,naam:newVal?gebruikerNaam:null,bijgewerkt_op:new Date().toISOString()})
+  });
+}
+
+// Pin / Beheer
+function promptPin(){
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-err').style.display='none';
+  document.getElementById('pin-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('pin-input').focus(),100);
+}
+function checkPin(){
+  if(document.getElementById('pin-input').value===PIN){
+    closeOverlay('pin-modal');beheerMode=true;
+    document.getElementById('beheer-bar').style.display='flex';
+    document.getElementById('beheer-btn').textContent='🔓 Beheer';
+    document.getElementById('add-order-btn').style.display='';
+    document.getElementById('action-col').style.display='';
+    if(currentOrderId)selectOrder(currentOrderId);
+  }else{
+    document.getElementById('pin-err').style.display='block';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+}
+function exitBeheer(){
+  beheerMode=false;
+  document.getElementById('beheer-bar').style.display='none';
+  document.getElementById('beheer-btn').textContent='⚙ Beheer';
+  document.getElementById('add-order-btn').style.display='none';
+  document.getElementById('action-col').style.display='none';
+  if(currentOrderId)selectOrder(currentOrderId);
+}
+function closeOverlay(id){document.getElementById(id).classList.remove('open');}
+
+// New order
+function openNewOrderModal(){
+  document.getElementById('o-nr').value='';
+  document.getElementById('o-desc').value='';
+  // Build V9 checklist
+  const cats=[...new Set(V9_OPTIONS.map(o=>o.cat))];
+  document.getElementById('v9-checklist').innerHTML=cats.map(cat=>{
+    const opts=V9_OPTIONS.filter(o=>o.cat===cat);
+    return`<div style="grid-column:1/-1;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;padding:4px 6px 2px;margin-top:4px">${cat}</div>`+
+    opts.map(o=>`<label class="v9-check"><input type="checkbox" value="${o.nr}"> ${o.nr} — ${o.desc}</label>`).join('');
+  }).join('');
+  document.getElementById('order-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('o-nr').focus(),100);
+}
+
+async function saveOrder(){
+  const nr=document.getElementById('o-nr').value.trim().toUpperCase();
+  const desc=document.getElementById('o-desc').value.trim();
+  if(!nr){alert('Vul een ordernummer in.');return;}
+  if(orders.find(o=>o.nr===nr)){alert('Dit ordernummer bestaat al.');return;}
+  const v9nrs=[...document.querySelectorAll('#v9-checklist input:checked')].map(c=>c.value);
+  try{
+    const result=await sbFetch('flame_orders','POST',{order_nr:nr,omschrijving:desc,v9_opties:v9nrs});
+    closeOverlay('order-modal');
+    await function openPersoneelModal(){
+  renderPersoneelLijst();
+  document.getElementById('personeel-modal').classList.add('open');
+}
+function renderPersoneelLijst(){
+  document.getElementById('personeel-lijst').innerHTML = personeel.length
+    ? personeel.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #eee">
+        <span style="font-family:monospace;background:#f0f0ee;padding:2px 8px;border-radius:6px;font-size:13px">${p.code}</span>
+        <span style="flex:1;font-size:13px">${p.naam}</span>
+        <button class="icon-btn red" onclick="removePersoneel('${p.code}')" title="Verwijderen">🗑</button>
+      </div>`).join('')
+    : '<p style="color:#aaa;font-size:13px">Nog geen medewerkers</p>';
+}
+async function addPersoneel(){
+  const code=document.getElementById('p-code').value.trim();
+  const naam=document.getElementById('p-naam').value.trim();
+  if(!code||!naam){alert('Vul code en naam in.');return;}
+  if(personeel.find(p=>p.code===code)){alert('Code bestaat al.');return;}
+  try{
+    await sbFetch('flame_personeel','POST',{code,naam,actief:true});
+    personeel.push({code,naam,actief:true});
+    document.getElementById('p-code').value='';
+    document.getElementById('p-naam').value='';
+    renderPersoneelLijst();
+  }catch(e){alert('Fout: '+e.message);}
+}
+async function removePersoneel(code){
+  if(!confirm('Medewerker '+code+' verwijderen?'))return;
+  await fetch(SB+'/rest/v1/flame_personeel?code=eq.'+code,{method:'DELETE',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
+  personeel=personeel.filter(p=>p.code!==code);
+  renderPersoneelLijst();
+}
+
+loadData();
+    const newOrder=orders.find(o=>o.nr===nr);
+    if(newOrder)selectOrder(newOrder.id);
+  }catch(e){alert('Aanmaken mislukt: '+e.message);}
+}
+
+async function deleteOrder(id){
+  const order=orders.find(o=>o.id===id);
+  if(!confirm(`Order ${order?.nr} verwijderen inclusief alle voortgang?`))return;
+  await fetch(SB+'/rest/v1/flame_voortgang2?order_id=eq.'+id,{method:'DELETE',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
+  await fetch(SB+'/rest/v1/flame_orders?id=eq.'+id,{method:'DELETE',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
+  orders=orders.filter(o=>o.id!==id);
+  currentOrderId=null;
+  renderOrderTabs();
+  if(orders.length>0)selectOrder(orders[0].id);
+  else{document.getElementById('no-orders').style.display='';document.getElementById('order-view').style.display='none';}
+}
+
+// Item modal
+function openModal(mode,nr){
+  editNr=nr||null;
+  document.getElementById('modal-title').textContent=mode==='add'?'Onderdeel toevoegen':'Onderdeel bewerken';
+  document.getElementById('f-nr').disabled=mode==='edit';
+  document.getElementById('f-img-preview').style.display='none';
+  document.getElementById('f-img-current').textContent='';
+  document.getElementById('f-img').value='';
+  if(mode==='edit'&&nr){
+    const p=baseParts.find(p=>p.nr===nr);
+    if(p){document.getElementById('f-nr').value=p.nr;document.getElementById('f-desc').value=p.desc;document.getElementById('f-qty').value=p.qty;document.getElementById('f-wb').value=p.wb;document.getElementById('f-type').value=p.type;updateCatOpts();document.getElementById('f-cat').value=p.cat;if(p.img)document.getElementById('f-img-current').textContent='✓ Afbeelding aanwezig';}
+  }else{
+    document.getElementById('f-nr').value='';document.getElementById('f-desc').value='';document.getElementById('f-qty').value=1;document.getElementById('f-wb').value='frame';document.getElementById('f-type').value='buis';updateCatOpts();
+  }
+  document.getElementById('item-modal').classList.add('open');
+}
+function updateCatOpts(){
+  const wb=document.getElementById('f-wb').value;
+  const cats=wb==='frame'?FRAME_CATS:wb==='sheet'?SHEET_CATS:V9_CATS;
+  document.getElementById('f-cat').innerHTML=cats.map(c=>`<option>${c}</option>`).join('');
+}
+function previewImg(){
+  const file=document.getElementById('f-img').files[0];if(!file)return;
+  const r=new FileReader();r.onload=e=>{const i=document.getElementById('f-img-preview');i.src=e.target.result;i.style.display='block';};r.readAsDataURL(file);
+}
+async function saveItem(){
+  const btn=document.getElementById('save-btn');btn.textContent='Bezig...';btn.disabled=true;
+  const nr=document.getElementById('f-nr').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  const qty=parseInt(document.getElementById('f-qty').value)||1;
+  const wb=document.getElementById('f-wb').value;
+  const cat=document.getElementById('f-cat').value;
+  const type=document.getElementById('f-type').value;
+  if(!nr||!desc){alert('Vul partnummer en omschrijving in.');btn.textContent='Opslaan';btn.disabled=false;return;}
+  let imgUrl=editNr?baseParts.find(p=>p.nr===editNr)?.img||null:null;
+  const file=document.getElementById('f-img').files[0];
+  if(file){
+    const ext=file.name.split('.').pop();const path=nr.replace(/[^a-z0-9]/gi,'_')+'.'+ext;
+    const up=await fetch(`${SB}/storage/v1/object/flame-afbeeldingen/${path}`,{method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':file.type,'x-upsert':'true'},body:file});
+    if(up.ok)imgUrl=`${SB}/storage/v1/object/public/flame-afbeeldingen/${path}`;
+  }
+  const row={nr,omschrijving:desc,aantal:qty,type,werkbon:wb,categorie:cat,afbeelding_url:imgUrl};
+  try{
+    if(editNr){
+      await fetch(`${SB}/rest/v1/flame_onderdelen?nr=eq.${encodeURIComponent(editNr)}`,{method:'PATCH',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(row)});
+      const p=baseParts.find(p=>p.nr===editNr);if(p)Object.assign(p,{desc,qty,type,wb,cat,img:imgUrl});
+    }else{
+      if(baseParts.find(p=>p.nr===nr)){alert('Partnummer bestaat al.');btn.textContent='Opslaan';btn.disabled=false;return;}
+      await sbFetch('flame_onderdelen','POST',row);
+      baseParts.push({nr,desc,qty,type,wb,cat,img:imgUrl});
+    }
+    closeOverlay('item-modal');
+  }catch(e){alert('Opslaan mislukt: '+e.message);}
+  btn.textContent='Opslaan';btn.disabled=false;
+}
+
+function openPartsModal(){closeOverlay('parts-modal');document.getElementById('parts-modal').classList.add('open');}
+function openLightbox(url){document.getElementById('lightbox-img').src=url;document.getElementById('lightbox').classList.add('open');}
+function setView(f,el){viewFilter=f;asmFilter='';document.getElementById('asm-filter').value='';document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');populateAsmFilter();populateCatFilter();render();}
+function setSF(f,el){sfFilter=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));el.classList.add('active');render();}
+function setAsmFilter(){
+  asmFilter=document.getElementById('asm-filter').value;
+  const order=orders.find(o=>o.id===currentOrderId);
+  if(!order)return;
+  if(asmFilter){
+    // Show asm progress card
+    const asmParts=order.parts.filter(p=>p.sam===asmFilter);
+    let done=0,total=0;
+    asmParts.forEach(p=>{const pr=getProgress(p);done+=pr.done;total+=pr.total;});
+    const pct=total>0?Math.round((done/total)*100):0;
+    document.getElementById('asm-card').style.display='';
+    document.getElementById('asm-card-title').textContent=asmFilter.split('—')[1]?.trim()||asmFilter;
+    document.getElementById('asm-fill').style.width=pct+'%';
+    document.getElementById('asm-pct').textContent=pct+'%';
+    document.getElementById('asm-count').textContent=done+'/'+total;
+    document.getElementById('asm-sub').textContent=asmParts.length+' onderdelen';
+  } else {
+    document.getElementById('asm-card').style.display='none';
+  }
+  populateCatFilter();render();
+}
+function populateAsmFilter(){
+  const order=orders.find(o=>o.id===currentOrderId);if(!order)return;
+  const sel=document.getElementById('asm-filter');
+  let parts=order.parts;
+  if(viewFilter!=='alle')parts=parts.filter(p=>p.wb===viewFilter);
+  const asms=[...new Set(parts.filter(p=>p.sam).map(p=>p.sam))].sort();
+  sel.innerHTML='<option value="">Alle samenstellingen</option>'+asms.map(a=>`<option value="${a}">${a}</option>`).join('');
+  sel.value=asmFilter;
+}
+
+function updateStats(){
+  const order=orders.find(o=>o.id===currentOrderId);if(!order)return;
+  let fs=0,ft=0,ss=0,st=0,vs=0,vt=0;
+  order.parts.forEach(p=>{
+    const pr=getProgress(p);
+    if(p.wb==='frame'){fs+=pr.done;ft+=pr.total;}
+    else if(p.wb==='sheet'){ss+=pr.done;st+=pr.total;}
+    else{vs+=pr.done;vt+=pr.total;}
+  });
+  const fp=ft>0?Math.round((fs/ft)*100):0,sp=st>0?Math.round((ss/st)*100):0,vp=vt>0?Math.round((vs/vt)*100):0;
+  document.getElementById('frame-fill').style.width=fp+'%';document.getElementById('frame-pct').textContent=fp+'%';
+  document.getElementById('frame-count').textContent=fs+'/'+ft;document.getElementById('frame-sub').textContent=order.parts.filter(p=>p.wb==='frame').length+' onderdelen';
+  document.getElementById('sheet-fill').style.width=sp+'%';document.getElementById('sheet-pct').textContent=sp+'%';
+  document.getElementById('sheet-count').textContent=ss+'/'+st;document.getElementById('sheet-sub').textContent=order.parts.filter(p=>p.wb==='sheet').length+' onderdelen';
+  document.getElementById('v9-fill').style.width=vp+'%';document.getElementById('v9-pct').textContent=vp+'%';
+  document.getElementById('v9-count').textContent=vs+'/'+vt;document.getElementById('v9-sub').textContent=order.parts.filter(p=>p.wb==='v9').length+' opties';
+}
+
+function populateCatFilter(){
+  const order=orders.find(o=>o.id===currentOrderId);if(!order)return;
+  const sel=document.getElementById('cat-filter');const cur=sel.value;
+  const parts=viewFilter==='alle'?order.parts:order.parts.filter(p=>p.wb===viewFilter);
+  const cats=[...new Set(parts.map(p=>p.cat))].sort();
+  sel.innerHTML='<option value="">Alle categorieën</option>'+cats.map(c=>`<option${c===cur?' selected':''}>${c}</option>`).join('');
+}
+
+function render(){
+  const order=orders.find(o=>o.id===currentOrderId);
+  const tbody=document.getElementById('tbody');
+  if(!order){tbody.innerHTML='<tr><td colspan="12" class="empty">Geen order geselecteerd</td></tr>';return;}
+  const q=document.getElementById('search').value.toLowerCase();
+  const cf=document.getElementById('cat-filter').value;
+  let parts=order.parts;
+  if(viewFilter!=='alle')parts=parts.filter(p=>p.wb===viewFilter);
+  if(asmFilter)parts=parts.filter(p=>p.sam===asmFilter);
+  if(cf)parts=parts.filter(p=>p.cat===cf);
+  if(q)parts=parts.filter(p=>p.nr.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q));
+  if(sfFilter!=='alle')parts=parts.filter(p=>getStatus(p)===sfFilter);
+  if(!parts.length){tbody.innerHTML='<tr><td colspan="12" class="empty">Geen onderdelen gevonden</td></tr>';return;}
+
+  const pfC=p=>p.wb==='frame'?'#185FA5':p.wb==='sheet'?'#2d7a1e':'#8B4513';
+  let html='',lastWb=null;
+  parts.forEach(p=>{
+    if(viewFilter==='alle'&&p.wb!==lastWb){
+      const lbl=p.wb==='frame'?'V7000 — Frame werkbon':p.wb==='sheet'?'V7000 — Sheet werkbon':'V9000 — Opties';
+      html+=`<tr class="section-hdr"><td colspan="12">${lbl}</td></tr>`;
+      lastWb=p.wb;
+    }
+    const{pct}=getProgress(p);
+    const al=allowedSteps(p.type);
+    const scs=STEPS.map(s=>{const ok=al[s];const done=p.steps?.[s];
+      return`<td class="sc"><button class="sb${done?' done':ok?'':' na'}" onclick="toggle('${p.nr}','${s}')">${done?'✓':ok?'·':'–'}</button></td>`;
+    }).join('');
+    const imgCell=p.img
+      ?`<td class="tc"><img src="${p.img}" class="thumb" onclick="openLightbox('${p.img}')" alt="foto"></td>`
+      :`<td class="tc"><div class="no-img${beheerMode?' cl':''}"${beheerMode?` onclick="openModal('edit','${p.nr}')" title="Afbeelding toevoegen"`:''}>${beheerMode?'+':'·'}</div></td>`;
+    const acts=beheerMode?`<td class="tc" style="white-space:nowrap"><button class="icon-btn" onclick="openModal('edit','${p.nr}')" title="Bewerken">✏️</button></td>`:'';
+    const wbBadge=p.wb==='frame'?'b-frame':p.wb==='sheet'?'b-sheet':'b-v9';
+    const wbLabel=p.wb==='frame'?'Frame':p.wb==='sheet'?'Sheet':'V9000';
+    html+=`<tr${p.wb==='v9'?' class="v9-row"':''}>
+      ${imgCell}
+      <td class="tnr">${p.nr}</td>
+      <td class="tc">${p.desc}</td>
+      <td class="tc tb-hide" style="text-align:center"><span class="qty">${p.qty}</span></td>
+      <td class="tc tb-hide"><span class="badge ${wbBadge}">${wbLabel}</span> <span class="badge b-cat">${p.cat}</span></td>
+      <td class="tc tb-hide" style="font-size:11px;color:#888">${p.sam?p.sam.split('—')[1]?.trim()||p.sam:''}</td>
+      ${scs}
+      <td class="tc"><div style="font-size:10px;color:#999">${pct}%</div><div class="pb"><div class="pf" style="width:${pct}%;background:${pfC(p)}"></div></div></td>
+      ${acts}
+    </tr>`;
+  });
+  tbody.innerHTML=html;
+}
+
+// Init — first need extra tables in Supabase
+function openPersoneelModal(){
+  renderPersoneelLijst();
+  document.getElementById('personeel-modal').classList.add('open');
+}
+function renderPersoneelLijst(){
+  document.getElementById('personeel-lijst').innerHTML = personeel.length
+    ? personeel.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #eee">
+        <span style="font-family:monospace;background:#f0f0ee;padding:2px 8px;border-radius:6px;font-size:13px">${p.code}</span>
+        <span style="flex:1;font-size:13px">${p.naam}</span>
+        <button class="icon-btn red" onclick="removePersoneel('${p.code}')" title="Verwijderen">🗑</button>
+      </div>`).join('')
+    : '<p style="color:#aaa;font-size:13px">Nog geen medewerkers</p>';
+}
+async function addPersoneel(){
+  const code=document.getElementById('p-code').value.trim();
+  const naam=document.getElementById('p-naam').value.trim();
+  if(!code||!naam){alert('Vul code en naam in.');return;}
+  if(personeel.find(p=>p.code===code)){alert('Code bestaat al.');return;}
+  try{
+    await sbFetch('flame_personeel','POST',{code,naam,actief:true});
+    personeel.push({code,naam,actief:true});
+    document.getElementById('p-code').value='';
+    document.getElementById('p-naam').value='';
+    renderPersoneelLijst();
+  }catch(e){alert('Fout: '+e.message);}
+}
+async function removePersoneel(code){
+  if(!confirm('Medewerker '+code+' verwijderen?'))return;
+  await fetch(SB+'/rest/v1/flame_personeel?code=eq.'+code,{method:'DELETE',headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}});
+  personeel=personeel.filter(p=>p.code!==code);
+  renderPersoneelLijst();
+}
+
+loadData();
+
+function fixStickyHeaders(){
+  const hdr = document.querySelector('.hdr');
+  const orderBar = document.querySelector('.order-bar');  
+  const controls = document.querySelector('.controls');
+  if(!hdr||!orderBar||!controls)return;
+  // Only sticky elements count for th positioning
+  const hdrH = hdr.offsetHeight;
+  const orderBarH = orderBar.offsetHeight;
+  const ctrlH = controls.offsetHeight;
+  const thTop = hdrH + orderBarH + ctrlH;
+  controls.style.top = (hdrH + orderBarH) + 'px';
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.style.top = thTop + 'px';
+  });
+}
+// Run after fonts/layout settle
+requestAnimationFrame(()=>requestAnimationFrame(fixStickyHeaders));
+window.addEventListener('load', fixStickyHeaders);
+window.addEventListener('resize', fixStickyHeaders);
+setTimeout(fixStickyHeaders, 500);
+setTimeout(fixStickyHeaders, 1500);
+</script>
+</body>
+</html>
